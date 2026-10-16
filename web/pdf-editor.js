@@ -34,11 +34,16 @@ export async function generatePDF(PDFLib, templateBytes, data) {
   draw(service, 94.2, 144, normal, 7, 51);
   draw(`01 ${service} 261004 000000230 6`, 150, 563.8, bold, 6, 130);
   page = doc.getPages()[1];
-  draw(`RFC: ${rfc}`, 77, 370, normal, 5, 365);
-  draw(`Razón social: ${businessName}`, 77, 378, normal, 5, 365);
-  draw(`Régimen fiscal: ${taxRegime}    CP: ${postalCode}    Uso CFDI:`, 77, 386, normal, 5, 365);
-  draw('AC Folio: 000063283419  Folio Fiscal:  N. Certificado del SAT:  No. certificado del CSD:', 77, 394, normal, 4, 365);
-  draw('Fecha y hora de certificación:  Unidad de medida: kWh', 77, 401, normal, 4, 365);
-  draw('|||||||||', 77, 408, normal, 4, 365);
+  // Preserve the original single fiscal row and its original baselines.
+  const fiscalRow = `RFC: ${rfc} Razón Social: ${businessName}  Régimen Fiscal: ${taxRegime} Uso CFDI:  CP: ${postalCode} AC Folio: 000063283419 Folio Fiscal:  N. Certificado del SAT:  No. certificado del CSD:  Fecha y hora de certificación:  Unidad de medi`;
+  let fiscalWidth;
+  try { fiscalWidth = normal.widthOfTextAtSize(fiscalRow, 4); }
+  catch { throw new Error('Usa caracteres latinos en los campos de texto.'); }
+  // Compress horizontally only when needed; never move labels to new lines.
+  page.pushOperators(PDFLib.pushGraphicsState(), PDFLib.concatTransformationMatrix(Math.min(1, 361 / fiscalWidth), 0, 0, 1, 77, 0));
+  page.drawText(fiscalRow, {x: 0, y: page.getHeight() - 368.92, size: 4, font: normal});
+  page.pushOperators(PDFLib.popGraphicsState());
+  draw('da: kWh', 77, 373.92, normal, 4, 365);
+  draw('|||||||||', 77, 378.92, normal, 4, 365);
   return doc.save();
 }
