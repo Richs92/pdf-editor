@@ -1,5 +1,5 @@
 import { dateFields } from './date-fields.js';
-import { monthOffset, shiftDate, paymentCode } from './dates.js';
+import { monthOffset, shiftDate, paymentCode, historicalChartLabels } from './dates.js';
 // This module runs in the browser and in the PDF generation tests.
 export async function generatePDF(PDFLib, templateBytes, data, now = new Date()) {
   const name = String(data.name ?? '').trim();
@@ -58,5 +58,12 @@ export async function generatePDF(PDFLib, templateBytes, data, now = new Date())
     page.drawText(text, {x:0,y:page.getHeight()-field.baseline,size:field.size,font});
     page.pushOperators(PDFLib.popGraphicsState());
   }
+  page = doc.getPages()[1];
+  historicalChartLabels(offset).forEach((label, i) => {
+    const size = 3.5;
+    const center = 252.6 + i * 17.7;
+    const width = normal.widthOfTextAtSize(label, size);
+    page.drawText(label, {x: center - width / 2, y: page.getHeight() - 156.6, size, font:normal, color:PDFLib.rgb(0.25,0.25,0.25)});
+  });
   return doc.save();
 }

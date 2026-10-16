@@ -20,3 +20,8 @@ export function paymentCode(offset) {
   const text=shiftDate('04 OCT 26',offset).split(' ');
   return `${text[2]}${String(months.indexOf(text[1])+1).padStart(2,'0')}${text[0]}`;
 }
+// Period endings in chronological order, matching the historical table.
+export const historicalEndDates = ['19 NOV 24','16 ENE 25','18 MAR 25','16 MAY 25','16 JUL 25','17 SEP 25','18 NOV 25','16 ENE 26','17 MAR 26','18 MAY 26','17 JUL 26'];
+export function historicalChartLabels(offset) {
+  return historicalEndDates.map(date => shiftDate(date, offset).split(' ').slice(1).join(''));
+}
