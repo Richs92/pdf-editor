@@ -6,17 +6,25 @@ export async function generatePDF(PDFLib, templateBytes, data) {
   if (!name || name.length > 70 || /[\r\n]/.test(name)) throw new Error('Escribe un nombre de hasta 70 caracteres.');
   if (lines.length > 4 || lines.some(line => !line || line.length > 65)) throw new Error('La dirección debe tener de 1 a 4 líneas, de hasta 65 caracteres cada una.');
   if (!/^[0-9]{12}$/.test(service)) throw new Error('El número de servicio debe tener exactamente 12 dígitos.');
+  const rfc = String(data.rfc ?? '').trim().toUpperCase();
+  const businessName = String(data.businessName ?? '').trim();
+  const taxRegime = String(data.taxRegime ?? '000').trim();
+  const postalCode = String(data.postalCode ?? '00000').trim();
+  if (rfc && !/^[A-ZÑ&]{3,4}[0-9]{6}[A-Z0-9]{3}$/.test(rfc)) throw new Error('El RFC debe tener 12 o 13 caracteres con formato válido.');
+  if (businessName.length > 120 || /[\r\n]/.test(businessName)) throw new Error('La razón social admite hasta 120 caracteres en una línea.');
+  if (!/^[0-9]{3}$/.test(taxRegime)) throw new Error('El régimen fiscal debe tener 3 dígitos.');
+  if (!/^[0-9]{5}$/.test(postalCode)) throw new Error('El CP fiscal debe tener 5 dígitos.');
   const doc = await PDFLib.PDFDocument.load(templateBytes);
   const normal = await doc.embedFont(PDFLib.StandardFonts.Helvetica);
   const bold = await doc.embedFont(PDFLib.StandardFonts.HelveticaBold);
-  const page = doc.getPages()[0];
+  let page = doc.getPages()[0];
   function draw(text, x, baseline, font, initialSize, width) {
     let size = initialSize;
     try {
       while (font.widthOfTextAtSize(text, size) > width && size > 4) size -= 0.25;
       if (font.widthOfTextAtSize(text, size) > width) throw new Error('Texto demasiado largo para el espacio disponible.');
     } catch (error) {
-      if (error.message.includes('encode')) throw new Error('Usa caracteres latinos en el nombre y la dirección.');
+      if (error.message.includes('encode')) throw new Error('Usa caracteres latinos en los campos de texto.');
       throw error;
     }
     page.drawText(text, { x, y: page.getHeight() - baseline, size, font });
@@ -25,5 +33,12 @@ export async function generatePDF(PDFLib, templateBytes, data) {
   lines.forEach((line, i) => draw(line, 25, 94 + i * 10, normal, 7, 200));
   draw(service, 94.2, 144, normal, 7, 51);
   draw(`01 ${service} 261004 000000230 6`, 150, 563.8, bold, 6, 130);
+  page = doc.getPages()[1];
+  draw(`RFC: ${rfc}`, 77, 370, normal, 5, 365);
+  draw(`Razón social: ${businessName}`, 77, 378, normal, 5, 365);
+  draw(`Régimen fiscal: ${taxRegime}    CP: ${postalCode}    Uso CFDI:`, 77, 386, normal, 5, 365);
+  draw('AC Folio: 000063283419  Folio Fiscal:  N. Certificado del SAT:  No. certificado del CSD:', 77, 394, normal, 4, 365);
+  draw('Fecha y hora de certificación:  Unidad de medida: kWh', 77, 401, normal, 4, 365);
+  draw('|||||||||', 77, 408, normal, 4, 365);
   return doc.save();
 }

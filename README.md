@@ -1,6 +1,6 @@
 # Documento · Editor PDF
 
-Webapp estática para editar nombre, dirección y número de servicio del PDF incluido. Genera la vista previa y descarga directamente en el navegador, sin API, cuentas ni secretos. Conserva las dos páginas y usa una plantilla cuyos campos anteriores se eliminaron, no simplemente se cubrieron.
+Webapp estática para editar nombre, dirección, número de servicio, RFC, razón social, régimen fiscal y CP fiscal del PDF incluido. Genera la vista previa y descarga directamente en el navegador, sin API, cuentas ni secretos. Conserva las dos páginas y usa una plantilla cuyos campos anteriores se eliminaron, no simplemente se cubrieron.
 
 ## Netlify: subir la carpeta
 
@@ -28,7 +28,7 @@ Después de editar `web/`, vuelve a ejecutar `npm run build`. La dependencia pdf
 
 ## Alcance
 
-Nombre de hasta 70 caracteres; dirección de hasta cuatro líneas de 65 caracteres; servicio de 12 dígitos. El texto reduce su tamaño para caber. El servicio visible también cambia en el talón inferior. Los códigos QR, de barras, dígitos de control y datos fiscales conservan su contenido original; la edición no constituye una reemisión del comprobante.
+Nombre de hasta 70 caracteres; dirección de hasta cuatro líneas de 65 caracteres; servicio de 12 dígitos. El texto reduce su tamaño para caber. El servicio visible también cambia en el talón inferior. Los datos fiscales del receptor se actualizan en la segunda página: RFC opcional de 12 o 13 caracteres, razón social opcional de hasta 120 caracteres, régimen fiscal de 3 dígitos y CP fiscal de 5 dígitos. Se comprueba su formato, sin consultar el SAT. Los códigos QR, de barras y dígitos de control conservan su contenido original; la edición no constituye una reemisión del comprobante.
 
 La plantilla y sus datos iniciales se distribuyen con el sitio y serán públicos al publicarlo. Los datos que el visitante escribe y el PDF que genera se procesan localmente en su navegador; la app no los envía a un servidor.
 
