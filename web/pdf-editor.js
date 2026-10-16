@@ -1,5 +1,7 @@
+import { dateFields } from './date-fields.js';
+import { monthOffset, shiftDate, paymentCode } from './dates.js';
 // This module runs in the browser and in the PDF generation tests.
-export async function generatePDF(PDFLib, templateBytes, data) {
+export async function generatePDF(PDFLib, templateBytes, data, now = new Date()) {
   const name = String(data.name ?? '').trim();
   const lines = String(data.address ?? '').trim().split(/\r?\n/).map(line => line.trim());
   const service = String(data.service ?? '').trim();
@@ -16,6 +18,8 @@ export async function generatePDF(PDFLib, templateBytes, data) {
   if (!/^[0-9]{5}$/.test(postalCode)) throw new Error('El CP fiscal debe tener 5 dígitos.');
   const doc = await PDFLib.PDFDocument.load(templateBytes);
   const normal = await doc.embedFont(PDFLib.StandardFonts.Helvetica);
+  const italic = await doc.embedFont(PDFLib.StandardFonts.HelveticaOblique);
+  const offset = monthOffset(now);
   const bold = await doc.embedFont(PDFLib.StandardFonts.HelveticaBold);
   let page = doc.getPages()[0];
   function draw(text, x, baseline, font, initialSize, width) {
@@ -32,7 +36,7 @@ export async function generatePDF(PDFLib, templateBytes, data) {
   draw(name, 24.8, 78, bold, 9, 200);
   lines.forEach((line, i) => draw(line, 25, 94 + i * 10, normal, 7, 200));
   draw(service, 94.2, 144, normal, 7, 51);
-  draw(`01 ${service} 261004 000000230 6`, 150, 563.8, bold, 6, 130);
+  draw(`01 ${service} ${paymentCode(offset)} 000000230 6`, 150, 563.8, bold, 6, 130);
   page = doc.getPages()[1];
   // Preserve the original single fiscal row and its original baselines.
   const fiscalRow = `RFC: ${rfc} Razón Social: ${businessName}  Régimen Fiscal: ${taxRegime} Uso CFDI:  CP: ${postalCode} AC Folio: 000063283419 Folio Fiscal:  N. Certificado del SAT:  No. certificado del CSD:  Fecha y hora de certificación:  Unidad de medi`;
@@ -45,5 +49,14 @@ export async function generatePDF(PDFLib, templateBytes, data) {
   page.pushOperators(PDFLib.popGraphicsState());
   draw('da: kWh', 77, 373.92, normal, 4, 365);
   draw('|||||||||', 77, 378.92, normal, 4, 365);
+  for (const field of dateFields) {
+    page = doc.getPages()[field.page];
+    const font = field.font === 'bold' ? bold : field.font === 'italic' ? italic : normal;
+    const text = shiftDate(field.text, offset);
+    const width = font.widthOfTextAtSize(text, field.size);
+    page.pushOperators(PDFLib.pushGraphicsState(), PDFLib.concatTransformationMatrix(Math.min(1, field.width / width), 0, 0, 1, field.x, 0));
+    page.drawText(text, {x:0,y:page.getHeight()-field.baseline,size:field.size,font});
+    page.pushOperators(PDFLib.popGraphicsState());
+  }
   return doc.save();
 }

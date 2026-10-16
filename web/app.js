@@ -1,3 +1,4 @@
+import {monthOffset, shiftDate} from './dates.js';
 import { generatePDF } from './pdf-editor.js';
 const form = document.querySelector('#form');
 const status = document.querySelector('#status');
@@ -7,7 +8,10 @@ let templateBytes, blobUrl, revision = 0;
 button.disabled = true;
 download.style.display = 'none';
 async function render(data, currentRevision) {
-  const bytes = await generatePDF(window.PDFLib, templateBytes, data);
+  const now = new Date();
+  const offset = monthOffset(now);
+  document.querySelector('#date-summary').textContent = `Fechas automáticas · Pago: ${shiftDate('04 OCT 26',offset)} · Corte: ${shiftDate('05 OCT 26',offset)} · Periodo: ${shiftDate('17 JUL 26',offset)}–${shiftDate('17 SEP 26',offset)}. Se conservan los días originales. Zona horaria: Mazatlán.`;
+  const bytes = await generatePDF(window.PDFLib, templateBytes, data, now);
   if (currentRevision !== revision) return;
   const previousUrl = blobUrl;
   blobUrl = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));

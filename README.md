@@ -33,3 +33,9 @@ Nombre de hasta 70 caracteres; dirección de hasta cuatro líneas de 65 caracter
 La plantilla y sus datos iniciales se distribuyen con el sitio y serán públicos al publicarlo. Los datos que el visitante escribe y el PDF que genera se procesan localmente en su navegador; la app no los envía a un servidor.
 
 La versión Python anterior sigue disponible para desarrollo con `python3 -m venv .venv`, `.venv/bin/pip install -r requirements.txt`, `.venv/bin/python app.py` y `.venv/bin/python -m unittest -v`. Netlify usa la versión estática en `web/`.
+
+## Fechas automáticas
+
+En cada generación se lee la fecha actual del dispositivo en la zona `America/Mazatlan`. Se toma octubre de 2026, mes de pago de la plantilla, como referencia y se desplazan meses y años por igual en las 28 fechas visibles: pago, corte de ambas páginas, periodo facturado, impresión e historial. Los días y la hora original se conservan. El código de fecha visible en el talón también se desplaza; los códigos QR y de barras no se regeneran, ni se recalculan consumos o importes. El resumen del formulario muestra el periodo y vencimientos antes de descargar. Cambiar las fechas de esta copia no constituye una nueva emisión ni acredita vigencia ante CFE.
+
+Las pruebas de fechas incluyen noviembre, cambio de año y límite de mes en Mazatlán. Para comprobar la distribución fiscal después de `npm test`: `python3 tests/check_fiscal_layout.py` (requiere PyMuPDF).

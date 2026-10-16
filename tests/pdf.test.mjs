@@ -6,7 +6,7 @@ import { generatePDF } from '../web/pdf-editor.js';
 const template = await readFile('web/template-clean.pdf');
 const values = {name:'MARÍA LÓPEZ',address:'CALLE NUEVA 123\nCOLONIA CENTRO\nMAZATLÁN, SINALOA',service:'123456789012',rfc:'XAXX010101000',businessName:'COMERCIALIZADORA DEL PACÍFICO SA DE CV',taxRegime:'601',postalCode:'80014'};
 test('genera un PDF de dos páginas con campos nuevos', async () => {
-  const bytes = await generatePDF(PDFLib,template,values);
+  const bytes = await generatePDF(PDFLib,template,values,new Date('2026-11-16T18:00:00Z'));
   const doc = await PDFLib.PDFDocument.load(bytes);
   assert.equal(doc.getPageCount(),2);
   await mkdir('artifacts',{recursive:true});
