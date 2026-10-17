@@ -100,6 +100,7 @@ test('admin: errores accionables sin exponer datos de Supabase',async()=>{
  result=await client().call('/auth/login',{method:'POST',body:{username:'admin',password:'short'}});assert.match(result.data.error,/12 caracteres/);
  for(const [path,method,status,code,expected] of [
  ['/rest/v1/app_users','GET',404,'PGRST205',/Faltan las tablas/],
+ ['/rest/v1/app_users','GET',404,'PGRST125',/ruta de conexión.*SUPABASE_URL/],
  ['/rest/v1/app_users','GET',400,'42703',/HTTP 400 · 42703 · perfiles/],
  ['/rest/v1/rpc/app_write_audit','POST',400,'23502',/HTTP 400 · 23502 · registro de actividad/],
  ['/auth/v1/admin/users/'+ADMIN_ID,'PUT',500,'unexpected_failure',/HTTP 500 · unexpected_failure · activación de cuenta/],
@@ -114,4 +115,20 @@ test('admin: errores accionables sin exponer datos de Supabase',async()=>{
  assert.match(result.data.error,expected);assert.ok(!JSON.stringify(result.data).includes('PRIVATE-UPSTREAM-DATA'));
  }
  }finally{if(previous===undefined)delete process.env.ADMIN_INITIAL_PASSWORD;else process.env.ADMIN_INITIAL_PASSWORD=previous;app.state.failures.length=0;}
+});
+
+test('Project URL: acepta raíz y Data API URL sin duplicar las rutas de Supabase',async()=>{
+ const projectURL=process.env.SUPABASE_URL;
+ try{
+ for(const suffix of ['/', '/rest/v1','/rest/v1/','/auth/v1/']){
+ process.env.SUPABASE_URL=' '+projectURL+suffix+' ';
+ const owner=client();const result=await owner.call('/auth/login',{method:'POST',body:{username:'admin',password:ADMIN_PASSWORD}});
+ assert.equal(result.status,200,JSON.stringify(result.data));assert.equal((await owner.call('/me')).data.user.username,'admin');
+ }
+ for(const suffix of ['/rest/v1/app_users','/rest/v1?apikey=PRIVATE-VALUE','/dashboard/project/test']){
+ process.env.SUPABASE_URL=projectURL+suffix;
+ const result=await client().call('/auth/login',{method:'POST',body:{username:'admin',password:ADMIN_PASSWORD}});
+ assert.equal(result.status,503);assert.match(result.data.error,/SUPABASE_URL/);assert.ok(!result.data.error.includes('PRIVATE-VALUE'));
+ }
+ }finally{process.env.SUPABASE_URL=projectURL;}
 });

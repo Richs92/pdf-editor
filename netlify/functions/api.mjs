@@ -7,8 +7,12 @@ class HTTPError extends Error{constructor(status,message,code){super(message);th
 function settings(){
  const url=process.env.SUPABASE_URL,key=process.env.SUPABASE_SERVICE_ROLE_KEY;
  if(!url||!key)throw new HTTPError(503,'El administrador aún no ha activado el acceso al sistema.','SETUP_REQUIRED');
- const parsed=new URL(url);if(parsed.protocol!=='https:'&&!['localhost','127.0.0.1'].includes(parsed.hostname))throw new HTTPError(503,'Configuración del servicio no válida.','SETUP_REQUIRED');
- return{url:url.replace(/\/$/,''),key};
+ let parsed;try{parsed=new URL(url.trim());}catch{throw new HTTPError(503,'SUPABASE_URL no es válida. Copia la Project URL de Supabase, del tipo https://tu-proyecto.supabase.co.','SETUP_REQUIRED');}
+ if(parsed.protocol!=='https:'&&!['localhost','127.0.0.1'].includes(parsed.hostname))throw new HTTPError(503,'Configuración del servicio no válida.','SETUP_REQUIRED');
+ // Supabase's Data API screen also presents URLs ending in /rest/v1.
+ // The client adds the Auth and REST routes itself, so use the project root.
+ if(!['','/rest/v1','/auth/v1'].includes(parsed.pathname.replace(/\/+$/,''))||parsed.search||parsed.hash||parsed.username||parsed.password)throw new HTTPError(503,'Revisa SUPABASE_URL en Netlify: debe ser la Project URL de Supabase, sin rutas de tablas, parámetros ni enlaces del dashboard.','SETUP_REQUIRED');
+ return{url:parsed.origin,key};
 }
 async function supabase(path,{method='GET',body,token,headers={}}={}){
  const config=settings();let response;
@@ -18,6 +22,7 @@ async function supabase(path,{method='GET',body,token,headers={}}={}){
   let message='No se pudo completar la operación.',status=response.status>=500?503:response.status;
   if(code==='weak_password'||code==='validation_failed'&&path.startsWith('/auth/v1/admin/users/'))message='Supabase rechazó la contraseña. En Netlify, cambia ADMIN_INITIAL_PASSWORD por una de al menos 12 caracteres con mayúsculas, minúsculas, números y símbolos, y publica de nuevo.';
   else if(code==='email_not_confirmed')message='La cuenta de administrador sigue pendiente de confirmación en Supabase.';
+  else if(code==='PGRST125'){message='La ruta de conexión a Supabase no es válida. Revisa SUPABASE_URL en Netlify: usa la Project URL https://tu-proyecto.supabase.co, sin /rest/v1 ni rutas adicionales.';status=503;}
   else if(code==='PGRST205'||code==='42P01'){message='Faltan las tablas de acceso en el proyecto de Supabase conectado a Netlify. Revisa SUPABASE_URL y ejecuta supabase/setup.sql en ese proyecto.';status=503;}
   else if(code==='PGRST202'||code==='42883'){message='Faltan funciones de acceso en Supabase o están desactualizadas. Ejecuta de nuevo supabase/setup.sql en el proyecto conectado a Netlify.';status=503;}
   else if(code==='42501'||path.startsWith('/rest/v1/')&&[401,403].includes(response.status)||path.startsWith('/auth/v1/admin/')&&[401,403].includes(response.status)){message='Netlify no tiene permisos de administrador en Supabase. Revisa que SUPABASE_SERVICE_ROLE_KEY sea la clave service_role del mismo proyecto que SUPABASE_URL, disponible para Functions.';status=503;}
