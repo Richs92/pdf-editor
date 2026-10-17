@@ -6,7 +6,7 @@ export async function generatePDF(PDFLib, templateBytes, data, now = new Date(),
   const name = normalizeCFEText(data.name).trim();
   const lines = cfeAddressLines(data);
   const service = String(data.service ?? '').trim();
-  if (!name || name.length > 70 || /[\r\n]/.test(name)) throw new Error('Escribe un nombre de hasta 70 caracteres.');
+  if (!name || name.length > 30 || /[\r\n]/.test(name)) throw new Error('Escribe un nombre de hasta 30 caracteres, contando espacios.');
   if (!/^[0-9]{12}$/.test(service)) throw new Error('El número de servicio debe tener exactamente 12 dígitos.');
   const rfc = String(data.rfc ?? '').trim().toUpperCase();
   const businessName = String(data.businessName ?? '').trim();

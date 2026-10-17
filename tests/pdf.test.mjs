@@ -16,7 +16,7 @@ test('genera un PDF de dos páginas con campos nuevos', async () => {
   await writeFile('artifacts/test-generated.pdf',bytes);
 });
 test('rechaza datos inválidos',async () => {
-  for(const patch of [{name:''},{name:'😀'},{rfc:'INVALIDO'},{businessName:'😀'},{taxRegime:'😀'},{taxRegime:'a'.repeat(151)},{taxRegime:'a\nb'},{postalCode:'8001'},{service:'123'},{service:'１２３４５６７８９０１２'},{address:'a\nb\nc\nd\ne'}]) {
+  for(const patch of [{name:''},{name:'A'.repeat(31)},{name:'😀'},{rfc:'INVALIDO'},{businessName:'😀'},{taxRegime:'😀'},{taxRegime:'a'.repeat(151)},{taxRegime:'a\nb'},{postalCode:'8001'},{service:'123'},{service:'１２３４５６７８９０１２'},{address:'a\nb\nc\nd\ne'}]) {
     await assert.rejects(generatePDF(PDFLib,template,{...values,...patch}));
   }
 });
@@ -32,7 +32,7 @@ test('acepta el régimen de salarios y nombres personalizados', async () => {
 });
 
 test('fuente gruesa: nombres con acentos, ñ y ajuste de nombres largos', async()=>{
- for(const name of ['DUARTE VALENZUELA BRENDA OLIVI','FELIX ALDERETE JESUS T','MARÍA JOSÉ MUÑOZ GÜÉMEZ','W'.repeat(42)]){
+ for(const name of ['DUARTE VALENZUELA BRENDA OLIVI','FELIX ALDERETE JESUS T','MARÍA JOSÉ MUÑOZ GÜÉMEZ','W'.repeat(30)]){
   const bytes=await generatePDF(PDFLib,template,{...values,name});
   const doc=await PDFLib.PDFDocument.load(bytes);
   const fonts=doc.getPages()[0].node.Resources().lookup(PDFLib.PDFName.of('Font'),PDFLib.PDFDict);
