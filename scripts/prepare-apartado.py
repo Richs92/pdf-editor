@@ -9,8 +9,8 @@ from docx.oxml.ns import qn
 
 doc=Document();section=doc.sections[0];section.page_width=Inches(8.5);section.page_height=Inches(11)
 section.top_margin=Inches(1.05);section.bottom_margin=Inches(.75);section.left_margin=Inches(1.15);section.right_margin=Inches(1.15)
-style=doc.styles['Normal'];style.font.name='Arial';style.font.size=Pt(11)
-style.paragraph_format.space_after=Pt(10);style.paragraph_format.line_spacing=1.35
+style=doc.styles['Normal'];style.font.name='Arial';style.font.size=Pt(12)
+style.paragraph_format.space_after=Pt(10);style.paragraph_format.line_spacing=1.45
 
 def p(text,align=WD_ALIGN_PARAGRAPH.JUSTIFY,bold=False):
  para=doc.add_paragraph();para.alignment=align;run=para.add_run(text);run.bold=bold;return para
@@ -23,6 +23,11 @@ para=p('');para.add_run('PENALIZACIÓN: ').bold=True;para.add_run('En caso de qu
 p('Tras recibir un pago parcial del apartado, el Vendedor suspenderá la venta de la propiedad por {reserveDays} días (hasta el {deadlineDay} de {deadlineMonth} de {deadlineYear}). Si el Comprador no completa el pago en este periodo, se considera incumplimiento de la carta de apartado, liberando al Vendedor de obligaciones de reserva y permitiéndole reanudar la venta de la propiedad.')
 p('')
 table=doc.add_table(rows=1,cols=2)
+caption=OxmlElement('w:tblCaption');caption.set(qn('w:val'),'TerminavitSignatures');table._tbl.tblPr.append(caption)
+borders=OxmlElement('w:tblBorders')
+for edge in ['top','left','bottom','right','insideH','insideV']:
+ border=OxmlElement('w:'+edge);border.set(qn('w:val'),'nil');borders.append(border)
+table._tbl.tblPr.append(borders)
 for cell,name,label in [(table.cell(0,0),'buyer','Entrega'),(table.cell(0,1),'seller','Recibe')]:
  para=cell.paragraphs[0];para.alignment=WD_ALIGN_PARAGRAPH.CENTER;para.add_run('__________________________\n{'+name+'}\n'+label)
 footer=section.footer.paragraphs[0];footer.alignment=WD_ALIGN_PARAGRAPH.RIGHT;footer.add_run('Página ')

@@ -27,7 +27,10 @@ export async function generateContractPDF(bytes){
   if(!id||seen.has(id)||!styles.has(id))return{};seen.add(id);const style=styles.get(id);
   return{...getStyle(val(child(style,'basedOn')),seen),...properties(child(style,'rPr'))};
  }
- const defaults=properties(stylesDoc.getElementsByTagNameNS(W,'rPrDefault')[0]?.getElementsByTagNameNS(W,'rPr')[0]);
+ const defaultParagraph=[...styles.values()].find(style=>val(style,'default')==='1'&&val(style,'type')==='paragraph');
+ const defaultStyleId=val(defaultParagraph,'styleId')||'Normal';
+ function paragraphProperties(id,seen=new Set()){if(!id||seen.has(id)||!styles.has(id))return{};seen.add(id);const style=styles.get(id);return {...paragraphProperties(val(child(style,'basedOn')),seen),...Object.fromEntries([...(child(style,'pPr')?.children||[])].map(node=>[node.localName,node]))};}
+ const defaults={...properties(stylesDoc.getElementsByTagNameNS(W,'rPrDefault')[0]?.getElementsByTagNameNS(W,'rPr')[0]),...getStyle(defaultStyleId)};
  const relationships=xml(zip.file('word/_rels/document.xml.rels').asText());
  const rels=new Map([...relationships.documentElement.children].map(r=>[r.getAttribute('Id'),r.getAttribute('Target')]));
  const body=doc.getElementsByTagNameNS(W,'body')[0];const sections=doc.getElementsByTagNameNS(W,'sectPr');const section=sections[sections.length-1];
@@ -37,7 +40,8 @@ export async function generateContractPDF(bytes){
  const contentWidth=width-margins[0]-margins[2];
  let pendingBreak=false;
  function paragraph(p,inCell=false){
-  const props=child(p,'pPr');const style=getStyle(val(child(props,'pStyle')));
+  const props=child(p,'pPr'),styleId=val(child(props,'pStyle'))||defaultStyleId;const style=getStyle(styleId);
+  const inherited=paragraphProperties(styleId),pProp=name=>child(props,name)||inherited[name];
   const runs=[];const images=[];let pageBreak=false;
   for(const run of p.getElementsByTagNameNS(W,'r')){
    const format={...style,...properties(child(run,'rPr'))};let text='';
@@ -58,13 +62,14 @@ export async function generateContractPDF(bytes){
   }
   const result=[];
   if(runs.length){
-   const align=val(child(props,'jc'))||'left';const spacing=child(props,'spacing');
+   const align=val(pProp('jc'))||'left';const spacing=pProp('spacing');
    const before=Number(val(spacing,'before')||0)/20,after=Number(val(spacing,'after')??120)/20;
-   const indent=child(props,'ind');const left=Number(val(indent,'left')||0)/20;
-   const item={text:runs,alignment:align==='both'?'justify':['left','right','center','justify'].includes(align)?align:'left',margin:[Math.min(left,100),before,0,after],...style};
+   const indent=pProp('ind');const left=Number(val(indent,'left')||0)/20;
+   const item={text:runs,alignment:align==='both'?'justify':['left','right','center','justify'].includes(align)?align:'left',margin:[Math.min(left,100),before,0,after],...(val(spacing,'line')&&(!val(spacing,'lineRule')||val(spacing,'lineRule')==='auto')?{lineHeight:Number(val(spacing,'line'))/240}:{}),...style};
    if(!inCell&&(pendingBreak||pageBreak||enabled(child(props,'pageBreakBefore')))){item.pageBreak='before';pendingBreak=false;}
    result.push(item);
   }else if(pageBreak&&!inCell)pendingBreak=true;
+  else if(!images.length){const spacing=pProp('spacing');result.push({text:' ',fontSize:style.fontSize||defaults.fontSize||11,margin:[0,Number(val(spacing,'before')||0)/20,0,Number(val(spacing,'after')||0)/20]});}
   for(const image of images){if(pendingBreak&&!inCell){image.pageBreak='before';pendingBreak=false;}result.push(image);}
   return result;
  }
@@ -88,6 +93,7 @@ export async function generateContractPDF(bytes){
   if(sizes.length!==columns)sizes=Array(columns).fill(1);const total=sizes.reduce((a,b)=>a+b,0);
   const item={table:{headerRows:sourceRows.findIndex(tr=>!enabled(child(child(tr,'trPr'),'tblHeader'))) < 0 ? sourceRows.length : sourceRows.findIndex(tr=>!enabled(child(child(tr,'trPr'),'tblHeader'))),widths:sizes.map(n=>(contentWidth-columns*10)*n/total),body:rows,dontBreakRows:false},layout:{hLineWidth:()=>.5,vLineWidth:()=>.5,hLineColor:()=> '#9ca9af',vLineColor:()=> '#9ca9af',paddingLeft:()=>4,paddingRight:()=>4,paddingTop:()=>4,paddingBottom:()=>4},margin:[0,4,0,8]};
   if(val(child(child(tableNode,'tblPr'),'tblCaption'))==='TerminavitINE'){item.layout={hLineWidth:()=>0,vLineWidth:()=>0,paddingLeft:()=>0,paddingRight:()=>0,paddingTop:()=>4,paddingBottom:()=>4};item.table.widths=[contentWidth];item.table.dontBreakRows=true;}
+  if(val(child(child(tableNode,'tblPr'),'tblCaption'))==='TerminavitSignatures'){item.layout='noBorders';item.table.dontBreakRows=true;}
   if(pendingBreak){item.pageBreak='before';pendingBreak=false;}return item;
  }
  const content=[];

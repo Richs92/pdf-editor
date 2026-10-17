@@ -56,6 +56,11 @@ const sample={seller:'ANA PÉREZ GARCÍA',buyer:'LUIS LÓPEZ RUIZ',sellerId:'INE
   const documentXML=word.file('word/document.xml').asText();assert.ok(documentXML.includes('rIdTerminavitPageFooter'));
   if(index===0||index===1){const xml=await page.evaluate(text=>{const doc=new DOMParser().parseFromString(text,'application/xml'),ns='http://schemas.openxmlformats.org/wordprocessingml/2006/main';return [...doc.getElementsByTagNameNS(ns,'drawing')].every(drawing=>drawing.parentElement.parentElement.querySelector('jc')?.getAttributeNS(ns,'val')==='center');},documentXML);assert.equal(xml,true);}
   download=page.waitForEvent('download',{timeout:90000});await page.locator('#pdf-download').click();await(await download).saveAs('artifacts/contracts/'+item.id+'.pdf');
+  if(item.id==='recibo-apartado'){
+   const pdfBytes=await readFile('artifacts/contracts/'+item.id+'.pdf');
+   const layout=await page.evaluate(async bytes=>{const lib=await import('/vendor/pdf.mjs');lib.GlobalWorkerOptions.workerSrc='/vendor/pdf.worker.mjs';const pdf=await lib.getDocument({data:new Uint8Array(bytes)}).promise;try{const text=await(await pdf.getPage(1)).getTextContent();return {pages:pdf.numPages,fonts:Object.values(text.styles).map(style=>style.fontFamily),titleSize:Math.abs(text.items.find(item=>item.str==='RECIBO')?.transform[0]||0)};}finally{await pdf.destroy();}},[...pdfBytes]);
+   assert.equal(layout.pages,1);assert.ok(layout.titleSize>=11.9);assert.ok(layout.fonts.some(font=>font.includes('sans')));
+  }
   if(index===0){
    download=page.waitForEvent('download');await page.locator('#google-download').click();assert.ok((await download).suggestedFilename().endsWith('.docx'));
    await page.screenshot({path:'artifacts/contracts/mobile.png',fullPage:true});
