@@ -1,5 +1,8 @@
+import {supportsPDFSharing} from './share-document.js';
 import {recordEvent} from './session.js';
 export function usesNativePDFPrinting(nav=navigator){return /iPad|iPhone|iPod/.test(nav.userAgent)||(nav.platform==='MacIntel'&&nav.maxTouchPoints>1);}
+export const supportsDirectPrinting=()=>usesNativePDFPrinting()&&supportsPDFSharing();
+export const shareForPrinting=file=>navigator.share({files:[file],title:'Imprimir documento'});
 // Keep preparation in the active tab: iOS can suspend an opener behind a new tab.
 export function openPrintWindow(){
  const dialog=document.createElement('dialog');dialog.className='document-print-dialog';dialog.style.cssText='position:fixed;inset:0;width:100%;max-width:100%;height:100%;max-height:100%;padding:0;border:0;margin:0;background:white';
@@ -67,9 +70,24 @@ export function openPrintWindow(){
 export function installPDFPrinting(anchor,module,status){
  const button=document.createElement('button');button.type='button';button.id='print-document';button.className='download';button.textContent='Imprimir';anchor.after(button);
  const available=()=>!anchor.hidden&&anchor.style.display!=='none'&&anchor.getAttribute('href')?.startsWith('blob:');
- const sync=()=>{button.hidden=!available();button.style.display=button.hidden?'none':'block';};new MutationObserver(sync).observe(anchor,{attributes:true,attributeFilter:['href','hidden','style']});sync();
+ let cached=null,loadingHref=null,sharing=false,fallback=false;
+ const sync=()=>{button.hidden=!available();button.style.display=button.hidden?'none':'block';
+  if(!available()){cached=null;return;}
+  if(supportsDirectPrinting()&&!fallback){
+   const href=anchor.href;button.disabled=sharing||cached?.href!==href;button.textContent=cached?.href===href?'Imprimir':'Preparando PDF para imprimir…';
+   if(cached?.href!==href&&loadingHref!==href){loadingHref=href;void fetch(href).then(response=>{if(!response.ok)throw Error();return response.blob();}).then(blob=>{if(anchor.href===href&&available())cached={href,file:new File([blob],anchor.download||'documento.pdf',{type:'application/pdf'})};}).catch(()=>{fallback=true;}).finally(()=>{if(loadingHref===href)loadingHref=null;sync();});}
+  }else {button.disabled=sharing;button.textContent='Imprimir';}
+ };new MutationObserver(sync).observe(anchor,{attributes:true,attributeFilter:['href','hidden','style']});sync();
  button.addEventListener('click',async()=>{
-  if(!available())return;let view;const href=anchor.href;button.disabled=true;
+  if(!available())return;
+  if(supportsDirectPrinting()&&!fallback&&cached?.href===anchor.href){
+   sharing=true;let result;try{result=shareForPrinting(cached.file);}catch(error){sharing=false;fallback=true;status.textContent='No se pudo abrir el menú. Pulsa Imprimir para usar la alternativa.';sync();return;}
+   sync();const outcomes=await Promise.allSettled([result,recordEvent(module,'document_print_requested',{format:'pdf'})]);sharing=false;
+   if(outcomes[0].status==='rejected'){if(outcomes[0].reason?.name==='AbortError')status.textContent='Menú cerrado. Puedes volver a imprimir.';else{fallback=true;status.textContent='No se pudo abrir el menú. Pulsa Imprimir para usar la alternativa.';}}
+   else status.textContent='En el menú del iPhone elige Imprimir y selecciona tu impresora. La app no confirma la impresión.';
+   if(outcomes[1].status==='rejected')status.textContent+=' No se pudo registrar la solicitud.';sync();return;
+  }
+  let view;const href=anchor.href;button.disabled=true;
   try{view=openPrintWindow();const response=await view.wait(fetch(href));if(!response.ok)throw Error('No se pudo preparar el PDF.');const blob=await view.wait(response.blob());await view.wait(recordEvent(module,'document_print_requested',{format:'pdf'}));if(!available()||anchor.href!==href)throw Error('El documento cambió. Actualiza la vista previa y vuelve a imprimir.');await view.show(blob,anchor.download);status.textContent='Se solicitó la impresión. El dispositivo permite seleccionar la impresora; la app no confirma que se haya impreso.';}
   catch(error){view?.fail(error);status.textContent=error.message;}finally{button.disabled=false;sync();}
  });

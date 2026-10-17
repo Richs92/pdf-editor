@@ -2,7 +2,7 @@ import {authorize,recordEvent} from './session.js';
 await authorize('contracts');
 import {generateContractPDF} from './contract-pdf.js';
 import {cropINEPhoto} from './ine-crop.js';
-import {openPrintWindow} from './print-document.js';
+import {openPrintWindow,supportsDirectPrinting,shareForPrinting} from './print-document.js';
 import {signaturePad} from './signature-pad.js';
 import {autoCropINE} from './ine-detect.js';
 import {formatPagareInput,pagareAmount} from './pagare-amount.js';
@@ -187,6 +187,7 @@ function pdfForReady(ready){
  cache.promise.catch(()=>{if(pdfCache===cache)pdfCache=null;});return cache.promise;
 }
 function updateShareButton(){
+ const print=$('#print-document'),direct=supportsDirectPrinting()&&!shareFallback;print.disabled=busy||(direct&&shareReady?.ready!==generated);print.textContent=direct&&shareReady?.ready!==generated?'Preparando PDF para imprimir…':'Imprimir';
  const button=$('#whatsapp-share'),hint=$('#share-hint');
  if(!supportsPDFSharing()||shareFallback){button.disabled=busy;button.textContent='Descargar PDF para WhatsApp';hint.textContent='Descarga el PDF y adjúntalo manualmente en WhatsApp.';return;}
  button.disabled=busy||!shareReady||shareReady.ready!==generated;
@@ -225,7 +226,15 @@ async function wordDownload(format='docx'){if(!generated)return;const ready=gene
 $('#word-download').addEventListener('click',()=>wordDownload().catch(error=>status.textContent=error.message));
 $('#google-download').addEventListener('click',async()=>{try{await wordDownload('google-docs');status.textContent='Word descargado. Súbelo a Google Drive y selecciona “Abrir con → Documentos de Google”. Los anexos están incluidos.';}catch(error){status.textContent=error.message;}});
 $('#print-document').addEventListener('click',async()=>{
- if(!generated||busy)return;let view;const ready=generated;lock(true);
+ if(!generated||busy)return;
+ if(supportsDirectPrinting()&&!shareFallback&&shareReady?.ready===generated){
+  const ready=generated;let result;try{result=shareForPrinting(shareReady.file);}catch(error){shareFallback=true;updateShareButton();status.textContent='No se pudo abrir el menú. Pulsa Imprimir para usar la alternativa.';return;}
+  lock(true);const outcomes=await Promise.allSettled([result,logGeneration(ready).then(()=>recordEvent('contracts','document_print_requested',{documentId:ready.id,format:'pdf'}))]);lock(false);
+  if(outcomes[0].status==='rejected'){if(outcomes[0].reason?.name==='AbortError')status.textContent='Menú cerrado. Puedes volver a imprimir.';else{shareFallback=true;updateShareButton();status.textContent='No se pudo abrir el menú. Pulsa Imprimir para usar la alternativa.';}}
+  else status.textContent='En el menú del iPhone elige Imprimir y selecciona tu impresora. La app no confirma la impresión.';
+  if(outcomes[1].status==='rejected')status.textContent+=' No se pudo registrar la solicitud.';return;
+ }
+ let view;const ready=generated;lock(true);
  try{
   view=openPrintWindow();view.stage('Generando el PDF con firmas y anexos…');const pdf=await view.wait(pdfForReady(ready));if(generated!==ready)throw Error('El documento cambió. Espera la vista previa actualizada y vuelve a imprimir.');
   await view.wait(logGeneration(ready));await view.wait(recordEvent('contracts','document_print_requested',{documentId:ready.id,format:'pdf'}));
