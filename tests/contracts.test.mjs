@@ -26,6 +26,10 @@ test('anexos: una hoja por persona, frente antes del reverso aunque se suban en 
  assert.deepEqual(groups.map(group=>group.title),['Vendedor','Comprador']);
  for(const group of groups)assert.deepEqual(group.photos.map(photo=>photo.face),['front','back']);
  assert.equal(groupINEPhotos([{person:'seller',face:'back'}],'pagare')[0].title,'Suscriptor');
+ const receipt=groupINEPhotos(photos,'recibo-apartado');
+ assert.deepEqual(receipt.map(group=>group.title),['Comprador','Asesor/vendedor']);
+ assert.deepEqual(receipt.map(group=>group.person),['buyer','seller']);
+ for(const group of receipt)assert.deepEqual(group.photos.map(photo=>photo.face),['front','back']);
 });
 
 test('contratos de cliente: sin guía interna, con cláusulas, firmas y originales conservados',async()=>{

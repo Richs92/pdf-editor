@@ -68,10 +68,10 @@ function photoXML(id, relationship, width, height) {
   return `<w:p><w:r><w:drawing><wp:inline xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${id}" name="INE ${id}"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${id}" name="INE ${id}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip xmlns:r="${R}" r:embed="${relationship}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>`;
 }
 export function groupINEPhotos(photos,documentId){
-  return ['seller','buyer'].flatMap(person=>{
-    const selected=photos.filter(photo=>(photo.person||(/^(Vendedor|Suscriptor)/.test(photo.label)?'seller':'buyer'))===person)
+  return (documentId==='recibo-apartado'?['buyer','seller']:['seller','buyer']).flatMap(person=>{
+    const selected=photos.filter(photo=>(photo.person||(/^(Vendedor|Suscriptor|Asesor)/.test(photo.label)?'seller':'buyer'))===person)
       .sort((a,b)=>(a.face||(/Frente/.test(a.label)?'front':'back'))==='front'?-1:1);
-    const title=documentId==='pagare'?(person==='seller'?'Suscriptor':'Beneficiario'):(person==='seller'?'Vendedor':'Comprador');
+    const title=documentId==='pagare'?(person==='seller'?'Suscriptor':'Beneficiario'):(person==='seller'?(documentId==='recibo-apartado'?'Asesor/vendedor':'Vendedor'):'Comprador');
     return selected.length?[{person,title,photos:selected}]:[];
   });
 }

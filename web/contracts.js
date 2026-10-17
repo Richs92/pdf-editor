@@ -54,7 +54,11 @@ function selectDocument(item){
   buildPhotoCards();$('#exports').hidden=true;status.textContent='La vista previa se actualiza automáticamente. Puedes dejar campos vacíos.';
   $('#document-preview').replaceChildren();const empty=document.createElement('div');empty.className='empty';empty.textContent='Cargando vista previa del documento…';$('#document-preview').append(empty);schedulePreview(0);
 }
-function photoSlots(){const note=current.id==='pagare';return [{key:'seller-front',label:(note?'Suscriptor':'Vendedor')+' · Frente de INE'},{key:'seller-back',label:(note?'Suscriptor':'Vendedor')+' · Reverso de INE'},{key:'buyer-front',label:(note?'Beneficiario':'Comprador')+' · Frente de INE'},{key:'buyer-back',label:(note?'Beneficiario':'Comprador')+' · Reverso de INE'}];}
+function photoSlots(){
+ const note=current.id==='pagare',receipt=current.id==='recibo-apartado';
+ const people=receipt?[['buyer','Comprador'],['seller','Asesor/vendedor']]:[['seller',note?'Suscriptor':'Vendedor'],['buyer',note?'Beneficiario':'Comprador']];
+ return people.flatMap(([person,label])=>[{key:person+'-front',label:label+' · Frente de INE'},{key:person+'-back',label:label+' · Reverso de INE'}]);
+}
 function photoKey(key){return current.id+'-'+key;}
 async function readPhoto(file){
   if(file.size>15*1024*1024)throw Error('La imagen no debe superar 15 MB.');
