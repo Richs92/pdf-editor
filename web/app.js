@@ -7,14 +7,14 @@ const form = document.querySelector('#form');
 const status = document.querySelector('#status');
 const button = document.querySelector('#generate');
 const download = document.querySelector('#download');
-let templateBytes, blobUrl, revision = 0;
+let templateBytes, nameFontBytes, blobUrl, revision = 0;
 button.disabled = true;
 download.style.display = 'none';
 async function render(data, currentRevision) {
   const now = new Date();
   const offset = monthOffset(now);
   document.querySelector('#date-summary').textContent = `Fechas automáticas · Pago: ${shiftDate('04 OCT 26',offset)} · Corte: ${shiftDate('05 OCT 26',offset)} · Periodo: ${shiftDate('17 JUL 26',offset)}–${shiftDate('17 SEP 26',offset)}. Se conservan los días originales. Zona horaria: Mazatlán.`;
-  const bytes = await generatePDF(window.PDFLib, templateBytes, data, now);
+  const bytes = await generatePDF(window.PDFLib, templateBytes, data, now, {fontkit:window.fontkit,nameFontBytes});
   if (currentRevision !== revision) return;
   await recordEvent('cfe','document_generated');
   await renderPreview(bytes);
@@ -30,10 +30,11 @@ async function render(data, currentRevision) {
 }
 async function initialize() {
   try {
-    const [defaultsResponse, templateResponse] = await Promise.all([fetch('./defaults.json'), fetch('./template-clean.pdf')]);
-    if (!defaultsResponse.ok || !templateResponse.ok || !window.PDFLib) throw new Error('No se pudo cargar la plantilla. Recarga la página.');
+    const [defaultsResponse, templateResponse, fontResponse] = await Promise.all([fetch('./defaults.json'), fetch('./template-clean.pdf'), fetch('./fonts/ArchivoBlack-Regular.ttf')]);
+    if (!defaultsResponse.ok || !templateResponse.ok || !fontResponse.ok || !window.PDFLib || !window.fontkit) throw new Error('No se pudo cargar la plantilla. Recarga la página.');
     const defaults = await defaultsResponse.json();
     templateBytes = await templateResponse.arrayBuffer();
+    nameFontBytes = await fontResponse.arrayBuffer();
     for (const [key, value] of Object.entries(defaults)) form.elements[key].value = value;
     await render(defaults, revision);
     document.querySelector('#preview-label').textContent = 'Plantilla · 2 páginas';

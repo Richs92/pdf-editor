@@ -1,7 +1,7 @@
 import { dateFields } from './date-fields.js';
 import { monthOffset, shiftDate, paymentCode, historicalChartLabels } from './dates.js';
 // This module runs in the browser and in the PDF generation tests.
-export async function generatePDF(PDFLib, templateBytes, data, now = new Date()) {
+export async function generatePDF(PDFLib, templateBytes, data, now = new Date(), {fontkit, nameFontBytes} = {}) {
   const name = String(data.name ?? '').trim();
   const lines = String(data.address ?? '').trim().split(/\r?\n/).map(line => line.trim());
   const service = String(data.service ?? '').trim();
@@ -17,6 +17,11 @@ export async function generatePDF(PDFLib, templateBytes, data, now = new Date())
   if (!taxRegime || taxRegime.length > 150 || /[\r\n]/.test(taxRegime)) throw new Error('Escribe un régimen fiscal de hasta 150 caracteres en una línea.');
   if (!/^[0-9]{5}$/.test(postalCode)) throw new Error('El CP fiscal debe tener 5 dígitos.');
   const doc = await PDFLib.PDFDocument.load(templateBytes);
+  if (!fontkit || !nameFontBytes) throw new Error('No se pudo cargar la fuente del nombre. Recarga la página.');
+  doc.registerFontkit(fontkit);
+  const nameFont = await doc.embedFont(nameFontBytes, {subset:true});
+  const supported = new Set(nameFont.getCharacterSet());
+  if ([...name].some(character => !supported.has(character.codePointAt(0)))) throw new Error('Usa caracteres latinos en el nombre.');
   const normal = await doc.embedFont(PDFLib.StandardFonts.Helvetica);
   const italic = await doc.embedFont(PDFLib.StandardFonts.HelveticaOblique);
   const offset = monthOffset(now);
@@ -33,7 +38,7 @@ export async function generatePDF(PDFLib, templateBytes, data, now = new Date())
     }
     page.drawText(text, { x, y: page.getHeight() - baseline, size, font });
   }
-  draw(name, 24.8, 78, bold, 9, 200);
+  draw(name, 25, 78, nameFont, 9, 200);
   lines.forEach((line, i) => draw(line, 25, 94 + i * 10, normal, 7, 200));
   draw(service, 94.2, 144, normal, 7, 51);
   draw(`01 ${service} ${paymentCode(offset)} 000000230 6`, 150, 563.8, bold, 6, 130);

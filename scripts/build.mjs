@@ -4,6 +4,7 @@ await rm('dist', { recursive: true, force: true });
 await mkdir('dist/vendor', { recursive: true });
 await cp('web', 'dist', { recursive: true });
 await cp('node_modules/pdf-lib/dist/pdf-lib.min.js', 'dist/vendor/pdf-lib.min.js');
+await cp('node_modules/@pdf-lib/fontkit/dist/fontkit.umd.min.js', 'dist/vendor/fontkit.umd.min.js');
 for (const name of ['pdf.mjs', 'pdf.worker.mjs']) {
   await cp(`node_modules/pdfjs-dist/legacy/build/${name}`, `dist/vendor/${name}`);
 }

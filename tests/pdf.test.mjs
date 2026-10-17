@@ -2,7 +2,10 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import * as PDFLib from 'pdf-lib';
-import { generatePDF } from '../web/pdf-editor.js';
+import fontkit from '@pdf-lib/fontkit';
+import { generatePDF as generateWithFont } from '../web/pdf-editor.js';
+const nameFontBytes = await readFile('web/fonts/ArchivoBlack-Regular.ttf');
+const generatePDF = (lib,template,data,now) => generateWithFont(lib,template,data,now,{fontkit,nameFontBytes});
 const template = await readFile('web/template-clean.pdf');
 const values = {name:'MARÍA LÓPEZ',address:'CALLE NUEVA 123\nCOLONIA CENTRO\nMAZATLÁN, SINALOA',service:'123456789012',rfc:'XAXX010101000',businessName:'COMERCIALIZADORA DEL PACÍFICO SA DE CV',taxRegime:'601',postalCode:'80014'};
 test('genera un PDF de dos páginas con campos nuevos', async () => {
@@ -26,4 +29,14 @@ test('acepta el régimen de salarios y nombres personalizados', async () => {
     await writeFile(`artifacts/regime-${filename}.pdf`,bytes);
     assert.equal((await PDFLib.PDFDocument.load(bytes)).getPageCount(),2);
   }
+});
+
+test('fuente gruesa: nombres con acentos, ñ y ajuste de nombres largos', async()=>{
+ for(const name of ['DUARTE VALENZUELA BRENDA OLIVI','FELIX ALDERETE JESUS T','MARÍA JOSÉ MUÑOZ GÜÉMEZ','W'.repeat(42)]){
+  const bytes=await generatePDF(PDFLib,template,{...values,name});
+  const doc=await PDFLib.PDFDocument.load(bytes);
+  const fonts=doc.getPages()[0].node.Resources().lookup(PDFLib.PDFName.of('Font'),PDFLib.PDFDict);
+  assert.ok(fonts.entries().some(([,ref])=>doc.context.lookup(ref,PDFLib.PDFDict).get(PDFLib.PDFName.of('BaseFont'))?.toString().includes('ArchivoBlack')));
+  await writeFile('artifacts/cfe-name-'+(name.startsWith('MARÍA')?'accents':name.startsWith('WW')?'long':name.split(' ')[0])+'.pdf',bytes);
+ }
 });
