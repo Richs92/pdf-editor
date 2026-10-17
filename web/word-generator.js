@@ -1,7 +1,9 @@
+import {pagareAmount} from './pagare-amount.js';
 const W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
 const R = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
 const escapeXML = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
 export function validateContract(contract, data) {
+  if(contract.id==='pagare')data={...data,...pagareAmount(data.amount)};
   const values = {};
   for (const field of contract.fields) {
     const value = String(data[field.key] ?? '').trim();

@@ -23,8 +23,16 @@ try{
  await page.locator('.tab[data-group="Pagaré"]').click();
  const input=page.locator('#field-subscriber');await input.fill('PRIMER VALOR');await input.fill('SEGUNDO VALOR');await input.fill('ULTIMO VALOR CORRECTO');await ready();
  const preview=await page.locator('#document-preview').innerText();assert.ok(preview.includes('ULTIMO VALOR CORRECTO'));assert.ok(!preview.includes('VALOR VIEJO'));assert.ok(!preview.includes('PRIMER VALOR'));
+ const amount=page.locator('#field-amount'),words=page.locator('#field-amountWords');
+ assert.equal(await amount.getAttribute('inputmode'),'decimal');assert.equal(await words.getAttribute('readonly'),'');
+ await amount.fill('');await amount.pressSequentially('10000');assert.equal(await amount.inputValue(),'10,000');assert.equal(await words.inputValue(),'Diez mil pesos m.n.');await ready();
+ assert.ok((await page.locator('#document-preview').innerText()).includes('la cantidad de $10,000 (Diez mil pesos m.n.)'));
+ await amount.fill('10000.5');assert.equal(await amount.inputValue(),'10,000.5');assert.equal(await words.inputValue(),'Diez mil pesos 50/100 m.n.');await ready();
+ await amount.fill('');assert.equal(await words.inputValue(),'');await ready();assert.ok(!(await page.locator('#document-preview').innerText()).includes('Diez mil pesos'));
+ await amount.fill('10000');await ready();
  const pending=page.waitForEvent('download');await page.locator('#word-download').click();await mkdir('artifacts/contract-preview',{recursive:true});await(await pending).saveAs('artifacts/contract-preview/automatico.docx');
- const xml=new PizZip(await readFile('artifacts/contract-preview/automatico.docx')).file('word/document.xml').asText();assert.ok(xml.includes('ULTIMO VALOR CORRECTO'));assert.ok(!xml.includes('PRIMER VALOR'));
+ const xml=new PizZip(await readFile('artifacts/contract-preview/automatico.docx')).file('word/document.xml').asText();assert.ok(xml.includes('ULTIMO VALOR CORRECTO'));assert.ok(!xml.includes('PRIMER VALOR'));assert.ok(xml.includes('10,000'));assert.ok(xml.includes('Diez mil pesos m.n.'));
+ const pdfPending=page.waitForEvent('download',{timeout:90000});await page.locator('#pdf-download').click();await(await pdfPending).saveAs('artifacts/contract-preview/automatico.pdf');
  assert.equal(app.state.logs.filter(log=>log.action==='document_generated').length,1);assert.ok(!JSON.stringify(app.state.logs).includes('ULTIMO VALOR'));
  assert.deepEqual(errors,[]);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({path:'artifacts/contract-preview/mobile.png',fullPage:true});
  console.log('Vista automática: siete plantillas, campos vacíos, ediciones rápidas, cambios de documento, descarga vigente y auditoría sin duplicados correctos.');
