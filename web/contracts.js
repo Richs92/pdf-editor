@@ -4,10 +4,11 @@ import {generateContractPDF} from './contract-pdf.js';
 import {recognizeINE} from './ine-ocr.js';
 import {extractINEFields,ineTargetFields} from './ine-fields.js';
 import {formatPagareInput,pagareAmount} from './pagare-amount.js';
+import {supportsPDFSharing,sharePDF} from './share-document.js';
 import {generateWord} from './word-generator.js';
 const $=selector=>document.querySelector(selector);
 const form=$('#contract-form'), status=$('#form-status');
-let catalog=[], current, generated, sourceVersion=0, pdfCache, busy=false, rendering=false, previewTimer, queuedManual=false, disposed=false;
+let catalog=[], current, generated, sourceVersion=0, pdfCache, busy=false, rendering=false, previewTimer, queuedManual=false, disposed=false, shareTimer, shareReady=null, shareFallback=false;
 const drafts=new Map(), photoData=new Map(), templates=new Map();
 function schedulePreview(delay=650,manual=false){
  clearTimeout(previewTimer);
@@ -15,7 +16,7 @@ function schedulePreview(delay=650,manual=false){
  previewTimer=setTimeout(()=>{previewTimer=null;void prepareDocument({manual});},delay);
 }
 function markDirty(){
- sourceVersion++;generated=null;pdfCache=null;$('#exports').hidden=true;
+ sourceVersion++;generated=null;pdfCache=null;shareReady=null;shareFallback=false;clearTimeout(shareTimer);$('#exports').hidden=true;
  status.textContent='La vista previa se actualizará automáticamente.';
  $('#preview-state').textContent='Cambios pendientes · actualizando…';$('#document-preview').setAttribute('aria-busy','true');
  schedulePreview();
@@ -123,7 +124,7 @@ function buildOCRReview(card,documentId,slot,photo){
   saveDraft();markDirty();message.textContent='Datos aplicados al formulario. Puedes seguir editándolos.';status.textContent='Datos de INE aplicados. Actualizando la vista previa automáticamente.';
  });area.append(apply);
 }
-function lock(value){busy=value;document.querySelectorAll('.actions button,.tab,.template-choice').forEach(button=>button.disabled=value);}
+function lock(value){busy=value;document.querySelectorAll('.actions button,.tab,.template-choice').forEach(button=>button.disabled=value);if(!value)updateShareButton();}
 function fitPreview(){
  const container=$('#document-preview');const width=container.clientWidth;
  container.querySelectorAll('.word-sheet').forEach(holder=>{
@@ -179,6 +180,8 @@ async function prepareDocument({manual=false}={}){
   if(manual)await logGeneration(ready);
   if(!isCurrent())return;
   $('#exports').hidden=false;$('#preview-state').textContent='Vista previa actualizada';
+  shareReady=null;shareFallback=false;clearTimeout(shareTimer);updateShareButton();
+  if(supportsPDFSharing())shareTimer=setTimeout(()=>{void prepareShareFile(ready);},800);
   status.textContent=`Documento actualizado${photos.length?' con '+photos.length+' cara(s) de INE':''}. Revisa el contenido antes de descargar.`;
  }catch(error){if(isCurrent()){status.textContent=error.message;$('#preview-state').textContent='No se pudo actualizar. Revisa los datos o vuelve a intentar.';$('#exports').hidden=true;}}
  finally{
@@ -189,6 +192,45 @@ async function prepareDocument({manual=false}={}){
 }
 form.addEventListener('submit',event=>{event.preventDefault();if(current?.id==='pagare')syncPagareAmount();saveDraft();markDirty();void prepareDocument({manual:true});});
 
+function pdfForReady(ready){
+ if(pdfCache?.ready===ready)return pdfCache.promise;
+ const cache={ready,promise:generateContractPDF(ready.bytes)};pdfCache=cache;
+ cache.promise.catch(()=>{if(pdfCache===cache)pdfCache=null;});return cache.promise;
+}
+function updateShareButton(){
+ const button=$('#whatsapp-share'),hint=$('#share-hint');
+ if(!supportsPDFSharing()||shareFallback){button.disabled=busy;button.textContent='Descargar PDF para WhatsApp';hint.textContent='Descarga el PDF y adjúntalo manualmente en WhatsApp.';return;}
+ button.disabled=busy||!shareReady||shareReady.ready!==generated;
+ button.textContent=shareReady?.ready===generated?'Compartir por WhatsApp':'Preparando PDF para compartir…';
+ hint.textContent='Se abrirá el menú de compartir del teléfono. Elige WhatsApp y el contacto. No se envía hasta que tú lo confirmes.';
+}
+async function prepareShareFile(ready){
+ try{
+  const blob=await pdfForReady(ready);
+  if(disposed||generated!==ready)return;
+  const file=new File([blob],ready.id+'-llenado.pdf',{type:'application/pdf'});
+  if(!navigator.canShare({files:[file]})){shareFallback=true;}else shareReady={ready,file};
+ }catch{if(generated===ready)shareFallback=true;}
+ if(generated===ready)updateShareButton();
+}
+$('#whatsapp-share').addEventListener('click',()=>{
+ if(!generated||busy)return;
+ if(!supportsPDFSharing()||shareFallback){$('#pdf-download').click();return;}
+ const prepared=shareReady;if(!prepared||prepared.ready!==generated)return;
+ let sharing;
+ try{sharing=sharePDF(prepared.file);}catch(error){shareFallback=true;updateShareButton();status.textContent=error.message;return;}
+ // Log a sharing request, not delivery to WhatsApp or a specific recipient.
+ const audit=logGeneration(prepared.ready).then(()=>recordEvent('contracts','document_share_requested',{documentId:prepared.ready.id,format:'pdf'}));
+ Promise.allSettled([sharing,audit]).then(([result,logged])=>{
+  if(generated!==prepared.ready)return;
+  if(result.status==='rejected'){
+   if(result.reason?.name==='AbortError')status.textContent='Menú de compartir cerrado. Puedes volver a intentarlo.';
+   else {shareFallback=true;updateShareButton();status.textContent='No se pudo abrir el menú de compartir. Puedes descargar el PDF y adjuntarlo en WhatsApp.';}
+  }else status.textContent='El documento se entregó al menú de compartir del teléfono. La app no confirma su envío ni entrega en WhatsApp.';
+  if(logged.status==='rejected')status.textContent+=' No se pudo registrar la solicitud de compartir.';
+ });
+});
+
 function download(blob,filename){const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=filename;link.click();setTimeout(()=>URL.revokeObjectURL(url),30000);}
 async function wordDownload(format='docx'){if(!generated)return;const ready=generated;await logGeneration(ready);await recordEvent('contracts','document_downloaded',{documentId:ready.id,format});if(generated!==ready)throw Error('El documento cambió. Vuelve a prepararlo.');download(new Blob([generated.bytes],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}),generated.id+'-llenado.docx');}
 $('#word-download').addEventListener('click',()=>wordDownload().catch(error=>status.textContent=error.message));
@@ -196,13 +238,13 @@ $('#google-download').addEventListener('click',async()=>{try{await wordDownload(
 $('#pdf-download').addEventListener('click',async()=>{
  if(!generated||busy)return;const prepared=generated,version=sourceVersion;lock(true);status.textContent='Generando PDF. Puede tardar unos segundos…';
  try{
-  const result=pdfCache||await generateContractPDF(prepared.bytes);
+  const result=await pdfForReady(prepared);
   if(version!==sourceVersion){status.textContent='Hay cambios nuevos. Vuelve a preparar el documento.';return;}
   await logGeneration(prepared);
   if(version!==sourceVersion)throw Error('El documento cambió. Espera a que se actualice la vista previa.');
   await recordEvent('contracts','document_downloaded',{documentId:prepared.id,format:'pdf'});
   if(version!==sourceVersion)throw Error('El documento cambió. Vuelve a prepararlo.');
-  pdfCache=result;download(result,prepared.id+'-llenado.pdf');status.textContent='PDF descargado con los datos y anexos incluidos.';
+  download(result,prepared.id+'-llenado.pdf');status.textContent='PDF descargado con los datos y anexos incluidos.';
  }catch(error){status.textContent='No se pudo generar el PDF. Puedes descargar el Word. '+error.message;}finally{lock(false);if(!generated)schedulePreview(0);}
 
 });
@@ -210,4 +252,4 @@ for(const button of document.querySelectorAll('.tab'))button.addEventListener('c
 for(const event of ['gesturestart','gesturechange'])document.addEventListener(event,e=>e.preventDefault(),{passive:false});
 try{const response=await fetch('./contracts-catalog.json');if(!response.ok)throw Error('No se pudo cargar el catálogo.');catalog=await response.json();setGroup('Ratificados');$('#workspace').hidden=false;$('#loading').hidden=true;}catch(error){$('#loading').textContent=error.message;}
 
-window.addEventListener('pagehide',()=>{disposed=true;clearTimeout(previewTimer);for(const photo of photoData.values())photo.ocr?.controller?.abort();});
+window.addEventListener('pagehide',()=>{disposed=true;clearTimeout(previewTimer);clearTimeout(shareTimer);for(const photo of photoData.values())photo.ocr?.controller?.abort();});
