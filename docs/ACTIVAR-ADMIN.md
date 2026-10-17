@@ -1,3 +1,25 @@
+# Usuarios y contraseñas sin correo
+
+El administrador entra con el usuario **admin**. Para establecer su contraseña inicial sin enviar correos:
+
+1. En Netlify, abre el sitio → Project configuration → Environment variables.
+2. Añade `ADMIN_INITIAL_PASSWORD`, con una contraseña elegida por ti de al menos 12 caracteres. Mantén el valor secreto y disponible para Functions, en Production.
+3. En Deploys, publica de nuevo el sitio (Trigger deploy).
+4. Abre la web e inicia sesión con usuario `admin` y esa contraseña.
+5. Después del primer acceso correcto puedes borrar esta variable. Su uso queda consumido en Supabase y no vuelve a restablecer la contraseña.
+
+Conserva `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY`. No necesitas ejecutar SQL nuevo si ya creaste las tablas y el administrador.
+
+En Admin, escribe el nombre, un usuario como `ana.ventas` y sus permisos. El sistema genera la contraseña y la muestra para entregarla al usuario. Puede entrar directamente. Si la olvida, pulsa **Nueva contraseña** y entrega la nueva. No se envían correos. El usuario puede cambiar su contraseña desde Mi cuenta si quiere.
+
+Los usuarios admiten de 3 a 32 caracteres: letras, números, puntos, guiones y guiones bajos; empiezan con letra. Se convierten a minúsculas. `admin` está reservado.
+
+Internamente Supabase requiere un identificador con formato de correo; usamos un alias técnico bajo `users.terminavit.invalid`, confirmado desde el servidor, sin correo real ni envíos. Las cuentas anteriores siguen aceptando su identificador anterior. Los permisos y el registro de actividad se conservan.
+
+---
+
+## Configuración original de la base de datos
+
 # Activar Home, usuarios y permisos
 
 El cambio está preparado en la rama `feature/home-admin-access`. No se ha aplicado al sitio de producción: primero crea Supabase y configura Netlify. El código falla con acceso cerrado si faltan esas variables; no hay usuarios ni contraseñas de producción predefinidos.
@@ -27,7 +49,7 @@ En la configuración de API del proyecto de Supabase, localiza:
 
 Guarda ambas como variables de entorno de tu sitio en Netlify, para **Functions**, en los contextos donde vayas a probar/publicar la app. Si tu interfaz no permite elegir alcance, el código tampoco las incorpora al JavaScript de la web. La clave `service_role` es secreta: no la pongas en archivos, capturas, formularios de la app ni mensajes del chat.
 
-No necesitas una clave pública de Supabase en el navegador, ni configurar un servidor SMTP para crear usuarios desde el Admin. La aplicación marca sus correos como confirmados y te muestra la contraseña temporal para compartirla tú.
+No necesitas una clave pública de Supabase en el navegador, ni configurar un servidor SMTP para crear usuarios desde el Admin. La aplicación marca sus correos como confirmados y te muestra la contraseña para compartirla tú.
 
 ## 4. Desplegar cuando estén listos los pasos anteriores
 
@@ -40,9 +62,9 @@ La web mostrará el Home después de iniciar sesión. CFE cambia a `/cfe.html`; 
 ## 5. Comprobación en tu sitio
 
 1. Entra con tu cuenta administradora y comprueba las cuatro secciones.
-2. En Admin, crea un usuario con correo y nombre. Marca, por ejemplo, solo Agua.
-3. Copia la contraseña temporal y entrégala por un medio privado. Se muestra una sola vez en la interfaz; si se pierde, genera otra con **Nueva contraseña**.
-4. En otra sesión del navegador, entra con ese usuario. Debe cambiar la contraseña antes de usar documentos.
+2. En Admin, crea un usuario con nombre de acceso y nombre completo. Marca, por ejemplo, solo Agua.
+3. Copia la contraseña y entrégala por un medio privado. Se muestra una sola vez en la interfaz; si se pierde, genera otra con **Nueva contraseña**.
+4. En otra sesión del navegador, entra con ese usuario. Puede usar sus documentos directamente, sin cambiar la contraseña.
 5. Comprueba que puede entrar a Agua y que CFE, Contratos y Predial aparecen bloqueados, incluso si pega sus URL directamente.
 6. Genera y solicita descargar un documento. En Admin → Log de actividad debe aparecer el usuario, la sección, la acción y la fecha de Mazatlán.
 7. Cambia los permisos o desactiva el usuario. El servidor aplicará el cambio en su próxima solicitud, sin esperar a que caduque la sesión.

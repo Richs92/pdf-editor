@@ -37,9 +37,9 @@ export async function startTestApp(){
     const user={id:randomUUID(),email:body.email,password:body.password};state.auth.push(user);return send(200,{id:user.id,email:user.email});
    }
    const target=url.pathname.match(/^\/auth\/v1\/admin\/users\/(.+)$/);
-   if(target){const user=state.auth.find(u=>u.id===target[1]);if(!user)return send(404,{});if(request.method==='DELETE')state.auth=state.auth.filter(u=>u!==user);else if(request.method==='PUT')user.password=body.password;return send(200,{id:user.id});}
+   if(target){const user=state.auth.find(u=>u.id===target[1]);if(!user)return send(404,{});if(request.method==='DELETE')state.auth=state.auth.filter(u=>u!==user);else if(request.method==='PUT'){if(body.password)user.password=body.password;if(body.app_metadata)user.app_metadata=body.app_metadata;}return send(200,{id:user.id,email:user.email,app_metadata:user.app_metadata});}
    if(url.pathname==='/rest/v1/app_users'){
-    let users=state.users;const id=url.searchParams.get('id');if(id)users=users.filter(u=>u.id===id.replace('eq.',''));if(url.searchParams.get('select')?.includes('app_permissions'))users=users.map(user=>({...user,app_permissions:state.permissions.filter(p=>p.user_id===user.id).map(p=>({module:p.module}))}));return send(200,users);
+    let users=state.users;const id=url.searchParams.get('id');if(id)users=users.filter(u=>u.id===id.replace('eq.',''));const role=url.searchParams.get('role');if(role)users=users.filter(u=>u.role===role.replace('eq.',''));if(request.method==='PATCH'){for(const user of users)Object.assign(user,body);}if(url.searchParams.get('select')?.includes('app_permissions'))users=users.map(user=>({...user,app_permissions:state.permissions.filter(p=>p.user_id===user.id).map(p=>({module:p.module}))}));return send(200,users);
    }
    if(url.pathname==='/rest/v1/app_permissions'){
     let permissions=state.permissions;const id=url.searchParams.get('user_id');if(id)permissions=permissions.filter(p=>p.user_id===id.replace('eq.',''));return send(200,permissions);
@@ -84,5 +84,5 @@ export async function startTestApp(){
  return {url,state,async close(){await new Promise(resolve=>server.close(resolve));await new Promise(resolve=>supabase.close(resolve));if(previousURL===undefined)delete process.env.SUPABASE_URL;else process.env.SUPABASE_URL=previousURL;if(previousKey===undefined)delete process.env.SUPABASE_SERVICE_ROLE_KEY;else process.env.SUPABASE_SERVICE_ROLE_KEY=previousKey;}};
 }
 export async function browserLogin(page,url,email='admin@example.test',password=ADMIN_PASSWORD){
- await page.goto(url+'/login.html');await page.getByLabel('Correo de usuario',{exact:true}).fill(email);await page.getByLabel('Contraseña',{exact:true}).fill(password);await page.getByRole('button',{name:'Iniciar sesión',exact:true}).click();await page.waitForURL(url+'/');await page.locator('#modules .module-card').first().waitFor();
+ await page.goto(url+'/login.html');await page.getByLabel('Usuario',{exact:true}).fill(email);await page.getByLabel('Contraseña',{exact:true}).fill(password);await page.getByRole('button',{name:'Iniciar sesión',exact:true}).click();await page.waitForURL(url+'/');await page.locator('#modules .module-card').first().waitFor();
 }

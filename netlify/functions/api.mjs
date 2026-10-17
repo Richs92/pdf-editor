@@ -1,4 +1,4 @@
-import {randomBytes} from 'node:crypto';
+import {randomBytes,createHash,timingSafeEqual} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {resolve,extname} from 'node:path';
 import {MODULES,PAGES,allowedModules,canAccess,contentModule} from '../lib/access.mjs';
@@ -34,7 +34,7 @@ async function authenticate(event,context){
  const profiles=await supabase('/rest/v1/app_users?id=eq.'+encodeURIComponent(auth.id)+'&select=*');const user=profiles?.[0];
  if(!user||!user.active){clearSession(context);throw new HTTPError(403,'Tu cuenta no tiene acceso activo. Contacta al administrador.','ACCOUNT_DISABLED');}
  const permissions=await supabase('/rest/v1/app_permissions?user_id=eq.'+encodeURIComponent(user.id)+'&select=module');
- context.token=token;context.user=user;context.modules=allowedModules(user,(permissions||[]).map(p=>p.module));return user;
+ context.token=token;context.user=publicUser(user);context.modules=allowedModules(user,(permissions||[]).map(p=>p.module));return user;
 }
 function requireReady(context){if(context.user.must_change_password)throw new HTTPError(403,'Cambia tu contraseña temporal para continuar.','PASSWORD_CHANGE_REQUIRED');}
 function requireAdmin(context){requireReady(context);if(context.user.role!=='admin')throw new HTTPError(403,'Solo el administrador puede realizar esta acción.');}
@@ -51,17 +51,28 @@ function sameOrigin(event){
 function text(value,label,max=120){if(typeof value!=='string'||!value.trim()||value.trim().length>max||/[\x00-\x1f]/.test(value))throw new HTTPError(400,'Revisa '+label+'.');return value.trim();}
 function passwordText(value,label,min=1){if(typeof value!=='string'||!value.trim()||value.length<min||value.length>128||/[\x00-\x1f]/.test(value))throw new HTTPError(400,'Revisa '+label+'.');return value;}
 function email(value){const result=text(value,'el correo',254).toLowerCase();if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(result))throw new HTTPError(400,'Escribe un correo válido.');return result;}
+const USER_DOMAIN='users.terminavit.invalid';
+function username(value){const name=text(value,'el usuario',32).toLowerCase();if(!/^[a-z][a-z0-9._-]{2,31}$/.test(name)||name==='admin')throw new HTTPError(400,'Usa de 3 a 32 letras, números, puntos, guiones o guiones bajos. El usuario admin está reservado.');return name;}
+function publicUser(user){return {...user,username:user.role==='admin'?'admin':user.email?.replace('@'+USER_DOMAIN,'')};}
+async function loginAddress(value){const name=text(value,'el usuario',254).toLowerCase();if(name.includes('@'))return email(name);if(name==='admin'){const admins=await supabase('/rest/v1/app_users?role=eq.admin&select=*&limit=2');if(admins?.length!==1||!admins[0].active)throw new HTTPError(401,'Usuario o contraseña incorrectos.');return admins[0].email;}return username(name)+'@'+USER_DOMAIN;}
+async function initializeAdmin(address,password){
+ const initial=process.env.ADMIN_INITIAL_PASSWORD;if(!initial||initial.length<12||!timingSafeEqual(createHash('sha256').update(initial).digest(),createHash('sha256').update(password).digest()))return false;
+ const admins=await supabase('/rest/v1/app_users?role=eq.admin&select=*&limit=2');if(admins?.length!==1||!admins[0].active||admins[0].email!==address)return false;
+ const auth=await supabase('/auth/v1/admin/users/'+admins[0].id);if(auth.app_metadata?.terminavit_password_initialized)return false;
+ await supabase('/auth/v1/admin/users/'+admins[0].id,{method:'PUT',body:{password,app_metadata:{...auth.app_metadata,terminavit_password_initialized:true}}});return true;
+}
 function uuid(value){if(typeof value!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value))throw new HTTPError(400,'Identificador de usuario no válido.');return value;}
 function modules(value){if(!Array.isArray(value)||value.some(m=>!MODULES.includes(m)))throw new HTTPError(400,'Selecciona permisos válidos.');return[...new Set(value)];}
 const generatedPassword=()=>'Aa7!'+randomBytes(18).toString('base64url');
 async function audit(context,action,module=null,target=null,details={},source='server',actorEmail=null){await rpc('app_write_audit',{p_actor:context.user?.id||null,p_action:action,p_module:module,p_target:target,p_source:source,p_details:details,p_email:actorEmail});}
 async function login(event,context){
- const body=bodyJSON(event),address=email(body.email);const password=passwordText(body.password,'la contraseña');let session;
+ const body=bodyJSON(event),address=await loginAddress(body.username??body.email);const password=passwordText(body.password,'la contraseña');let session;
  try{session=await supabase('/auth/v1/token?grant_type=password',{method:'POST',body:{email:address,password}});}catch(error){
-  if([400,401,403,429].includes(error.status)){await audit(context,'login_failed',null,null,{},'server',address);throw new HTTPError(error.status===429?429:401,error.status===429?'Demasiados intentos. Espera un minuto.':'Correo o contraseña incorrectos.');}throw error;
+  if([400,401,403].includes(error.status)&&await initializeAdmin(address,password)){session=await supabase('/auth/v1/token?grant_type=password',{method:'POST',body:{email:address,password}});}else if([400,401,403,429].includes(error.status)){await audit(context,'login_failed',null,null,{},'server',address);throw new HTTPError(error.status===429?429:401,error.status===429?'Demasiados intentos. Espera un minuto.':'Usuario o contraseña incorrectos.');}else throw error;
  }
  const profiles=await supabase('/rest/v1/app_users?id=eq.'+encodeURIComponent(session.user.id)+'&select=*');const user=profiles?.[0];
  if(!user?.active){context.user=user||null;await audit(context,'login_denied',null,null,{},'server',address);await supabase('/auth/v1/logout?scope=local',{method:'POST',token:session.access_token}).catch(()=>{});throw new HTTPError(403,'Tu cuenta no tiene acceso activo. Contacta al administrador.');}
+ if(user.must_change_password){await supabase('/rest/v1/app_users?id=eq.'+user.id,{method:'PATCH',body:{must_change_password:false}});user.must_change_password=false;}
  context.user=user;await audit(context,'login');setSession(context,session);return json(context,200,{mustChangePassword:user.must_change_password});
 }
 async function targetUser(id){const list=await supabase('/rest/v1/app_users?id=eq.'+uuid(id)+'&select=*');if(!list?.[0]||list[0].role!=='user')throw new HTTPError(400,'Solo se pueden administrar usuarios normales.');return list[0];}
@@ -125,14 +136,14 @@ export async function handler(event){
   requireAdmin(context);
   if(path==='/admin/users'&&method==='GET'){
    const users=await supabase('/rest/v1/app_users?select=id,email,display_name,role,active,must_change_password,created_at,app_permissions(module)&order=created_at.desc&limit=500');
-   return json(context,200,{users:(users||[]).map(({app_permissions:permissions,...user})=>({...user,modules:allowedModules(user,(permissions||[]).map(p=>p.module))}))});
+   return json(context,200,{users:(users||[]).map(({app_permissions:permissions,...user})=>({...publicUser(user),modules:allowedModules(user,(permissions||[]).map(p=>p.module))}))});
   }
   if(path==='/admin/users'&&method==='POST'){
-   const data=bodyJSON(event),address=email(data.email),name=text(data.displayName,'el nombre'),perms=modules(data.modules),password=generatedPassword();let auth;
-   try{auth=await supabase('/auth/v1/admin/users',{method:'POST',body:{email:address,password,email_confirm:true}});}catch(error){if(error.upstream?.code==='email_exists'||error.status===422)throw new HTTPError(409,'Ya existe un usuario con ese correo.');throw error;}
+   const data=bodyJSON(event),address=data.username!==undefined?username(data.username)+'@'+USER_DOMAIN:email(data.email),name=text(data.displayName,'el nombre'),perms=modules(data.modules),password=generatedPassword();let auth;
+   try{auth=await supabase('/auth/v1/admin/users',{method:'POST',body:{email:address,password,email_confirm:true}});}catch(error){if(error.upstream?.code==='email_exists'||error.status===422)throw new HTTPError(409,'Ya existe ese nombre de usuario.');throw error;}
    const id=auth.id||auth.user?.id;if(!id)throw new HTTPError(503,'No se pudo crear el usuario.');
    try{await rpc('app_provision_user',{p_actor:context.user.id,p_id:id,p_email:address,p_name:name,p_modules:perms});}catch(error){await supabase('/auth/v1/admin/users/'+id,{method:'DELETE'}).catch(()=>{});throw error;}
-   return json(context,201,{id,email:address,temporaryPassword:password});
+   return json(context,201,{id,email:address,username:address.replace('@'+USER_DOMAIN,''),temporaryPassword:password});
   }
   const update=path.match(/^\/admin\/users\/([0-9a-f-]+)$/i);
   if(update&&method==='PATCH'){

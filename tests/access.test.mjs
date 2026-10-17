@@ -39,20 +39,22 @@ test('sesión HttpOnly, permisos en servidor, revocación inmediata y CSRF',asyn
  await admin.call('/admin/users/'+USER_ID,{method:'PATCH',body:{displayName:'Usuario de prueba',active:false,modules:['water']}});assert.equal((await staff.call('/me')).status,403);
  await admin.call('/admin/users/'+USER_ID,{method:'PATCH',body:{displayName:'Usuario de prueba',active:true,modules:['cfe','water']}});
 });
-test('crear, contraseña aleatoria, cambio obligatorio, permisos, reset y log',async()=>{
+test('crear, contraseña aleatoria, acceso directo, permisos, reset y log',async()=>{
  const admin=await login();
- const created=await admin.call('/admin/users',{method:'POST',body:{displayName:'Nuevo usuario',email:'new@example.test',modules:['predial']}});assert.equal(created.status,201);assert.ok(created.data.temporaryPassword.length>=24);
+ const created=await admin.call('/admin/users',{method:'POST',body:{displayName:'Nuevo usuario',username:'nuevo.usuario',modules:['predial']}});assert.equal(created.status,201);assert.ok(created.data.temporaryPassword.length>=24);
  const id=created.data.id,password=created.data.temporaryPassword;
- const newbie=client();let response=await newbie.call('/auth/login',{method:'POST',body:{email:'new@example.test',password}});assert.equal(response.status,200);assert.equal(response.data.mustChangePassword,true);
+ const newbie=client();let response=await newbie.call('/auth/login',{method:'POST',body:{username:'nuevo.usuario',password}});assert.equal(response.status,200);assert.equal(response.data.mustChangePassword,false);
  const cookie=response.headers.getSetCookie().join(';');for(const flag of ['HttpOnly','Secure','SameSite=Lax'])assert.ok(cookie.includes(flag));
- assert.equal((await newbie.call('/content?path=predial/template.pdf')).status,403);
+ assert.equal((await newbie.call('/content?path=predial/template.pdf')).status,200);
  assert.equal((await newbie.call('/auth/password',{method:'POST',body:{currentPassword:password,password:'New-personal-password-123!'}})).status,200);
  assert.equal((await newbie.call('/content?path=predial/template.pdf')).status,200);
  assert.equal((await newbie.call('/content?path=water/template.pdf')).status,403);
  assert.equal((await newbie.call('/audit',{method:'POST',body:{module:'predial',action:'document_generated'}})).status,200);
- const audit=await admin.call('/admin/logs?actor='+id+'&module=predial');assert.ok(audit.data.items.some(item=>item.action==='document_generated'&&item.actor_email==='new@example.test'&&item.source==='browser'));
+ const audit=await admin.call('/admin/logs?actor='+id+'&module=predial');assert.ok(audit.data.items.some(item=>item.action==='document_generated'&&item.actor_email==='nuevo.usuario@users.terminavit.invalid'&&item.source==='browser'));
  const reset=await admin.call('/admin/users/'+id+'/reset-password',{method:'POST',body:{}});assert.equal(reset.status,200);assert.notEqual(reset.data.temporaryPassword,password);
  assert.equal((await newbie.call('/content?path=predial/template.pdf')).status,403);
+ assert.equal((await newbie.call('/auth/login',{method:'POST',body:{username:'nuevo.usuario',password}})).status,401);
+ const relogin=await newbie.call('/auth/login',{method:'POST',body:{username:'nuevo.usuario',password:reset.data.temporaryPassword}});assert.equal(relogin.status,200);assert.equal(relogin.data.mustChangePassword,false);assert.equal((await newbie.call('/content?path=predial/template.pdf')).status,200);
  assert.equal((await admin.call('/admin/users/'+ADMIN_ID,{method:'PATCH',body:{displayName:'Try',active:false,modules:[]}})).status,400);
  const users=await admin.call('/admin/users');assert.ok(!JSON.stringify(users.data).includes(password));assert.ok(!JSON.stringify(app.state.logs).includes(password));assert.ok(!JSON.stringify(app.state.logs).includes(reset.data.temporaryPassword));
  assert.equal((await admin.call('/auth/logout',{method:'POST',body:{}})).status,200);assert.equal((await admin.call('/me')).status,401);
@@ -74,3 +76,15 @@ test('recuperación compatible con el enlace predeterminado de Supabase',async()
  const expired=await anonymous.call('/auth/recover',{method:'POST',body:{password:'Recovery-implicit-password-123!',accessToken:'fake.invalid.signature'}});assert.equal(expired.data.code,'RECOVERY_EXPIRED');
  const result=await anonymous.call('/auth/recover',{method:'POST',body:{password:'Recovery-implicit-password-123!',accessToken:token}});assert.equal(result.status,200);assert.equal(app.state.auth.find(u=>u.id===USER_ID).password,'Recovery-implicit-password-123!');
 });
+
+ test('admin sin correo: contraseña inicial de un solo uso',async()=>{
+ const original=app.state.auth.find(u=>u.id===ADMIN_ID).password;
+ process.env.ADMIN_INITIAL_PASSWORD='Initial-admin-password-123!';
+ try{
+ const owner=client();assert.equal((await owner.call('/auth/login',{method:'POST',body:{username:'admin',password:process.env.ADMIN_INITIAL_PASSWORD}})).status,200);
+ assert.equal((await owner.call('/me')).data.user.username,'admin');
+ assert.equal(app.state.auth.find(u=>u.id===ADMIN_ID).app_metadata.terminavit_password_initialized,true);
+ app.state.auth.find(u=>u.id===ADMIN_ID).password='Changed-admin-password-123!';
+ assert.equal((await client().call('/auth/login',{method:'POST',body:{username:'admin',password:process.env.ADMIN_INITIAL_PASSWORD}})).status,401);
+ }finally{delete process.env.ADMIN_INITIAL_PASSWORD;app.state.auth.find(u=>u.id===ADMIN_ID).password=original;}
+ });
