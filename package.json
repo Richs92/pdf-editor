@@ -9,7 +9,9 @@
     "test:contracts": "node tests/browser/contracts.mjs",
     "prepare:contracts": "python3 scripts/prepare-contracts.py",
     "test:predial": "node tests/browser/predial.mjs",
-    "prepare:predial": "python3 scripts/prepare-predial.py"
+    "prepare:predial": "python3 scripts/prepare-predial.py",
+    "test:water": "node tests/browser/water.mjs",
+    "prepare:water": "python3 scripts/prepare-water.py"
   },
   "dependencies": {
     "docx-preview": "0.3.7",

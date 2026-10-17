@@ -95,3 +95,20 @@ python3 tests/verify_predial_exports.py
 ```
 
 Las verificaciones comparan los campos en ambas mitades, el comportamiento de los opcionales y los contenidos de las imágenes originales. Resultados en `artifacts/predial/`, fuera del despliegue.
+
+## Recibo de agua JAPAC
+
+La sección **Agua** (`water.html`) usa `recibo.pdf` como plantilla. Permite editar cuenta de nueve dígitos (conservando ceros iniciales), nombre y dirección. La categoría siempre se genera como **DOMÉSTICA**.
+
+Las fechas se calculan en cada generación con la fecha del dispositivo, en horario de Mazatlán: emisión el día 03 del mes actual, vencimiento el día 07 y mes facturado igual al mes actual. La lectura actual queda en el día 03 de ese mes y la anterior en el día 03 del mes previo, incluyendo cambios de año. Se muestra un resumen antes de descargar. No se cambian los días ni se recalculan importes, tarifas, número de recibo, referencias de pago o QR al cambiar cuenta o categoría.
+
+El original está en `data/water/original.pdf`. La plantilla preparada elimina solamente los nueve campos editables/dinámicos y conserva imágenes y fondos. Para regenerarla: `npm run prepare:water` (PyMuPDF). Verificación:
+
+```sh
+npm run build
+npm test
+npm run test:water
+python3 tests/verify_water_exports.py
+```
+
+Incluye noviembre, cambio de año, zona horaria, categoría fija, descarga y anchos de pantalla de 320 a 1360 px. Los archivos de prueba se guardan en `artifacts/water/`, excluido del despliegue.
