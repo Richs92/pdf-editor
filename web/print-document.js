@@ -1,4 +1,5 @@
 import {recordEvent} from './session.js';
+export function usesNativePDFPrinting(nav=navigator){return /iPad|iPhone|iPod/.test(nav.userAgent)||(nav.platform==='MacIntel'&&nav.maxTouchPoints>1);}
 // Keep preparation in the active tab: iOS can suspend an opener behind a new tab.
 export function openPrintWindow(){
  const dialog=document.createElement('dialog');dialog.className='document-print-dialog';dialog.style.cssText='position:fixed;inset:0;width:100%;max-width:100%;height:100%;max-height:100%;padding:0;border:0;margin:0;background:white';
@@ -28,7 +29,17 @@ export function openPrintWindow(){
   wait,fail,stage,
   async show(blob,filename='documento.pdf'){
    check();stage('Cargando el documento para imprimir…');
-   url=win.URL.createObjectURL(blob);const link=doc.createElement('a');link.href=url;link.download=filename;link.textContent='Descargar PDF';toolbar.append(link);
+   url=window.URL.createObjectURL(blob);const link=doc.createElement('a');link.href=url;link.download=filename;link.textContent='Descargar PDF';toolbar.append(link);
+   if(usesNativePDFPrinting()){
+    // iOS may print the parent page instead of an iframe. Open the actual PDF
+    // from an explicit tap after generation, with no HTML or raster conversion.
+    const native=doc.createElement('a');native.id='native-pdf-print';native.href=url;native.target='_blank';native.rel='noopener';native.textContent='Abrir PDF para imprimir';toolbar.insertBefore(native,link);
+    button.hidden=true;button.style.display='none';finished=true;clearTimeout(timer);clearInterval(ticker);updateElapsed();progress.max=1;progress.value=1;
+    message.textContent='PDF listo. Pulsa Abrir PDF para imprimir y, en el visor del iPhone o iPad, usa Compartir → Imprimir.';
+    hint.textContent='Se abrirá el PDF original con sus páginas, firmas y anexos. Elige una impresora compatible con AirPrint en la misma red Wi-Fi.';
+    return;
+   }
+
    try{await wait((async()=>{
    const pdfjs=await import('./vendor/pdf.mjs');pdfjs.GlobalWorkerOptions.workerSrc=new URL('./vendor/pdf.worker.mjs',import.meta.url).href;
    const bytes=new Uint8Array(await blob.arrayBuffer());check();task=pdfjs.getDocument({data:bytes,standardFontDataUrl:new URL('./vendor/standard_fonts/',import.meta.url).href,cMapUrl:new URL('./vendor/cmaps/',import.meta.url).href,cMapPacked:true});
