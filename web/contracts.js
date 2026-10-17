@@ -126,7 +126,7 @@ function buildOCRReview(card,documentId,slot,photo){
 }
 function lock(value){busy=value;document.querySelectorAll('.actions button,.tab,.template-choice').forEach(button=>button.disabled=value);if(!value)updateShareButton();}
 function fitPreview(){
- const container=$('#document-preview');const width=container.clientWidth;
+ const container=$('#document-preview'),style=getComputedStyle(container);const width=container.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight);
  container.querySelectorAll('.word-sheet').forEach(holder=>{
   const section=holder.firstElementChild;const scale=Math.min(1,width/section.offsetWidth);
   holder.style.width=section.offsetWidth*scale+'px';holder.style.height=section.offsetHeight*scale+'px';section.style.transform=`scale(${scale})`;
@@ -139,10 +139,10 @@ async function renderDocument(bytes,isCurrent){
  await Promise.all([...source.querySelectorAll('img')].map(image=>image.decode().catch(()=>{})));
  if(document.fonts?.ready)await document.fonts.ready;
  if(!isCurrent())return;
- const preview=$('#document-preview');preview.replaceChildren();
+ const preview=$('#document-preview'),scrollTop=preview.scrollTop;preview.replaceChildren();
  // Preserve generated styles without exposing source markup as application code.
  source.querySelectorAll('style').forEach(style=>preview.append(style.cloneNode(true)));
- source.querySelectorAll('section.docx').forEach(section=>{const holder=document.createElement('div');holder.className='word-sheet';holder.append(section.cloneNode(true));preview.append(holder);});fitPreview();
+ source.querySelectorAll('section.docx').forEach(section=>{const holder=document.createElement('div');holder.className='word-sheet';holder.append(section.cloneNode(true));preview.append(holder);});fitPreview();preview.scrollTop=scrollTop;
 }
 function syncPagareAmount(){
  if(current?.id!=='pagare')return;
