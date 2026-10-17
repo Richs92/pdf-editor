@@ -10,3 +10,86 @@
   [headers.values]
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "same-origin"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+  included_files = ["netlify/private-assets/**"]
+
+[[redirects]]
+  from = "/cfe.html"
+  to = "/.netlify/functions/api/content?path=cfe.html"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/contracts.html"
+  to = "/.netlify/functions/api/content?path=contracts.html"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/contracts-catalog.json"
+  to = "/.netlify/functions/api/content?path=contracts-catalog.json"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/predial.html"
+  to = "/.netlify/functions/api/content?path=predial.html"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/predial/template.pdf"
+  to = "/.netlify/functions/api/content?path=predial/template.pdf"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/predial/defaults.json"
+  to = "/.netlify/functions/api/content?path=predial/defaults.json"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/predial/fields.js"
+  to = "/.netlify/functions/api/content?path=predial/fields.js"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/water.html"
+  to = "/.netlify/functions/api/content?path=water.html"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/water/template.pdf"
+  to = "/.netlify/functions/api/content?path=water/template.pdf"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/water/defaults.json"
+  to = "/.netlify/functions/api/content?path=water/defaults.json"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/template-clean.pdf"
+  to = "/.netlify/functions/api/content?path=template-clean.pdf"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/defaults.json"
+  to = "/.netlify/functions/api/content?path=defaults.json"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/templates/*"
+  to = "/.netlify/functions/api/content?path=templates/:splat"
+  status = 200
+  force = true

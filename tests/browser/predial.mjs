@@ -1,21 +1,15 @@
 import {chromium} from 'playwright';
 import {mkdir,readFile} from 'node:fs/promises';
-import {createServer} from 'node:http';
-import {resolve,extname} from 'node:path';
 import assert from 'node:assert/strict';
-const root=resolve('dist');
-const server=createServer(async(request,response)=>{try{
- const pathname=decodeURIComponent(new URL(request.url,'http://local').pathname);
- const file=resolve(root,'.'+(pathname==='/'?'/index.html':pathname));
- if(!file.startsWith(root+'/')){response.writeHead(403).end();return;}
- const body=await readFile(file);const mime={'.js':'text/javascript','.mjs':'text/javascript','.css':'text/css','.html':'text/html','.json':'application/json','.pdf':'application/pdf'}[extname(file)]||'application/octet-stream';response.writeHead(200,{'Content-Type':mime}).end(body);
-}catch{response.writeHead(404).end();}});
-await new Promise(resolve=>server.listen(8092,'127.0.0.1',resolve));
+import {startTestApp,browserLogin} from '../helpers/test-app.mjs';
+const app=await startTestApp();
 const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',args:['--no-sandbox']});
+await mkdir('artifacts/predial',{recursive:true});
 try{
  const page=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true,acceptDownloads:true});
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
- await page.goto('http://127.0.0.1:8092/predial.html');
+ await browserLogin(page,app.url);
+ await page.goto(app.url+'/predial.html');
  await page.locator('#status').filter({hasText:'Ambas copias están actualizadas.'}).waitFor();
  assert.equal(await page.locator('#preview canvas').count(),1);
  assert.ok(await page.locator('#key0').evaluate(el=>el.readOnly));assert.ok(await page.locator('#key5').evaluate(el=>el.readOnly));
@@ -39,6 +33,6 @@ try{
  await page.setViewportSize({width:390,height:844});await page.screenshot({path:'artifacts/predial/mobile.png',fullPage:true});
  await page.setViewportSize({width:1360,height:1000});await page.screenshot({path:'artifacts/predial/desktop.png',fullPage:true});
  assert.ok(await page.locator('#name').evaluate(el=>parseFloat(getComputedStyle(el).fontSize))>=16);assert.deepEqual(errors,[]);
- await page.goto('http://127.0.0.1:8092/');await page.getByRole('link',{name:'Predial',exact:true}).click();assert.ok(page.url().endsWith('/predial.html'));
+ await page.goto(app.url+'/');await page.getByRole('link',{name:'Predial',exact:true}).click();assert.ok(page.url().endsWith('/predial.html'));
  console.log('Predial: campos segmentados, opcionales, descarga, vista móvil y navegación correctos.');
-}finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
+}finally{await browser.close();await app.close();}

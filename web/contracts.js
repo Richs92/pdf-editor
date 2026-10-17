@@ -1,3 +1,5 @@
+import {authorize,recordEvent} from './session.js';
+await authorize('contracts');
 import {generateContractPDF} from './contract-pdf.js';
 import {generateWord} from './word-generator.js';
 const $=selector=>document.querySelector(selector);
@@ -93,20 +95,23 @@ form.addEventListener('submit',async event=>{
   const item=current;let template=templates.get(item.id);if(!template){const response=await fetch('./'+item.template);if(!response.ok)throw Error('No se pudo cargar la plantilla.');template=new Uint8Array(await response.arrayBuffer());templates.set(item.id,template);}
   const photos=photoSlots().flatMap(slot=>{const photo=photoData.get(photoKey(slot.key));return photo?[{...photo,label:slot.label}]:[];});
   const bytes=await generateWord(template,item,getValues(),photos);
+  await recordEvent('contracts','document_generated',{documentId:item.id});
   await renderDocument(bytes);
   if(version!==sourceVersion){status.textContent='Hay cambios nuevos. Vuelve a preparar el documento.';return;}
   generated={bytes,id:item.id};pdfCache=null;$('#exports').hidden=false;status.textContent=`Documento listo${photos.length?' con '+photos.length+' anexo(s) de INE':''}. Revisa el contenido antes de descargar.`;
  }catch(error){status.textContent=error.message;$('#exports').hidden=true;}finally{lock(false);}
 });
 function download(blob,filename){const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=filename;link.click();setTimeout(()=>URL.revokeObjectURL(url),30000);}
-function wordDownload(){if(!generated)return;download(new Blob([generated.bytes],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}),generated.id+'-llenado.docx');}
-$('#word-download').addEventListener('click',wordDownload);
-$('#google-download').addEventListener('click',()=>{wordDownload();status.textContent='Word descargado. Súbelo a Google Drive y selecciona “Abrir con → Documentos de Google”. Los anexos están incluidos.';});
+async function wordDownload(format='docx'){if(!generated)return;const ready=generated;await recordEvent('contracts','document_downloaded',{documentId:ready.id,format});if(generated!==ready)throw Error('El documento cambió. Vuelve a prepararlo.');download(new Blob([generated.bytes],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}),generated.id+'-llenado.docx');}
+$('#word-download').addEventListener('click',()=>wordDownload().catch(error=>status.textContent=error.message));
+$('#google-download').addEventListener('click',async()=>{try{await wordDownload('google-docs');status.textContent='Word descargado. Súbelo a Google Drive y selecciona “Abrir con → Documentos de Google”. Los anexos están incluidos.';}catch(error){status.textContent=error.message;}});
 $('#pdf-download').addEventListener('click',async()=>{
  if(!generated||busy)return;const prepared=generated,version=sourceVersion;lock(true);status.textContent='Generando PDF. Puede tardar unos segundos…';
  try{
   const result=pdfCache||await generateContractPDF(prepared.bytes);
   if(version!==sourceVersion){status.textContent='Hay cambios nuevos. Vuelve a preparar el documento.';return;}
+  await recordEvent('contracts','document_downloaded',{documentId:prepared.id,format:'pdf'});
+  if(version!==sourceVersion)throw Error('El documento cambió. Vuelve a prepararlo.');
   pdfCache=result;download(result,prepared.id+'-llenado.pdf');status.textContent='PDF descargado con los datos y anexos incluidos.';
  }catch(error){status.textContent='No se pudo generar el PDF. Puedes descargar el Word. '+error.message;}finally{lock(false);}
 

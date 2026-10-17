@@ -1,3 +1,5 @@
+import {authorize,recordEvent,guardDownload} from '../session.js';
+await authorize('predial');
 import {generatePredial} from './generator.js';
 import {renderPreview} from '../preview.js';
 const $=id=>document.getElementById(id),form=$('predial-form'),status=$('status');
@@ -12,6 +14,7 @@ async function update(){
  const version=revision;busy=true;$('generate').disabled=true;status.textContent='Actualizando ambas copias…';
  try{
   const bytes=await generatePredial(window.PDFLib,template,values());if(version!==revision)return;
+  await recordEvent('predial','document_generated');
   await renderPreview(bytes);if(version!==revision)return;
   const previous=url;url=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'}));$('download').href=url;$('download').hidden=false;
   if(previous)setTimeout(()=>URL.revokeObjectURL(previous),30000);
@@ -38,3 +41,5 @@ try{
  for(const key of ['name','address','expiry','total','terrain','construction'])$(key).value=data[key];
  await update();
 }catch(error){status.textContent=error.message;}
+
+guardDownload($('download'),'predial');

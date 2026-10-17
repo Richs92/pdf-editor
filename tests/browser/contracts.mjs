@@ -1,26 +1,16 @@
 import {chromium} from 'playwright';
 import {mkdir,readFile} from 'node:fs/promises';
-import {createServer} from 'node:http';
-import {resolve,extname} from 'node:path';
 import assert from 'node:assert/strict';
-const root=resolve('dist');
-const server=createServer(async(request,response)=>{
- try{
-  const pathname=decodeURIComponent(new URL(request.url,'http://local').pathname);
-  const file=resolve(root,'.'+(pathname==='/'?'/index.html':pathname));
-  if(!file.startsWith(root+'/')){response.writeHead(403).end();return;}
-  const body=await readFile(file);const mime={'.js':'text/javascript','.mjs':'text/javascript','.css':'text/css','.html':'text/html','.json':'application/json','.ttf':'font/ttf','.pdf':'application/pdf'}[extname(file)]||'application/octet-stream';
-  response.writeHead(200,{'Content-Type':mime});response.end(body);
- }catch{response.writeHead(404).end();}
-});
-await new Promise(resolve=>server.listen(8091,'127.0.0.1',resolve));
+import {startTestApp,browserLogin} from '../helpers/test-app.mjs';
+const app=await startTestApp();
 const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',args:['--no-sandbox']});
 await mkdir('artifacts/contracts',{recursive:true});
 try{
  const page=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true,acceptDownloads:true});
  const uploads=[];page.on('request',request=>{if(request.method()!=='GET')uploads.push(request.url());});
  const errors=[];page.on('pageerror',error=>errors.push(error.message));
- await page.goto('http://127.0.0.1:8091/contracts.html');
+ await browserLogin(page,app.url);
+ await page.goto(app.url+'/contracts.html');
  await page.locator('#workspace').waitFor({state:'visible'});
  const catalog=JSON.parse(await readFile('web/contracts-catalog.json','utf8'));
 const sample={seller:'ANA PÉREZ GARCÍA',buyer:'LUIS LÓPEZ RUIZ',sellerId:'INE VENDEDOR 123456789',buyerId:'INE COMPRADOR 987654321',sellerAddress:'CALLE DEL VENDEDOR 10, CULIACÁN',buyerAddress:'CALLE DEL COMPRADOR 20, CULIACÁN',civilStatus:'casado bajo separación de bienes, acta 123, libro 2',title:'Escritura 1234 del 10 de enero de 2020, Notaría 5',registry:'Inscripción 42, libro 10',propertyAddress:'CALLE DEL INMUEBLE 30, CULIACÁN, SINALOA, CP 80000',boundaries:'Norte: 10 metros; sur: 10 metros; este: 20 metros; oeste: 20 metros',cadastre:'CAT-12345',folio:'FOL-67890',lien:'Hipoteca a favor de INFONAVIT',credit:'1234567890',balance:'100,000.00',price:'500,000.00',priceWords:'QUINIENTOS MIL',payment:'Transferencia bancaria',deposit:'50,000.00',depositWords:'CINCUENTA MIL',penalty:'100,000.00',penaltyWords:'CIEN MIL',deadline:'30 de noviembre de 2026',jurisdiction:'Culiacán',signCity:'Culiacán, Sinaloa',signHour:'12:00',signDay:'20',signMonth:'octubre',signYear:'2026',notary:'NOTARIO DE PRUEBA',notaryNumber:'5',notaryCity:'Culiacán',spouse:'MARÍA ESPOSA DE PRUEBA',subscriber:'PEDRO SUSCRIPTOR DE PRUEBA',subscriberAddress:'CALLE DEL SUSCRIPTOR 40, CULIACÁN',beneficiary:'TERMINAVIT',beneficiaryAddress:'AVENIDA DEL BENEFICIARIO 50, CULIACÁN',amount:'75,000.00',amountWords:'SETENTA Y CINCO MIL PESOS 00/100 MONEDA NACIONAL',issueCity:'Culiacán, Sinaloa',issueDate:'20 de octubre de 2026',dueDate:'20 de diciembre de 2026',paymentCity:'Culiacán, Sinaloa',ordinaryRate:'40',ordinaryWords:'cuarenta',lateRate:'80',lateWords:'ochenta',noteJurisdiction:'Culiacán, Sinaloa'};
@@ -60,9 +50,9 @@ const sample={seller:'ANA PÉREZ GARCÍA',buyer:'LUIS LÓPEZ RUIZ',sellerId:'INE
   }
   console.log(item.id+': formulario, Word, PDF y vista móvil correctos');
  }
- assert.deepEqual(errors,[]);assert.deepEqual(uploads,[]);
+ assert.deepEqual(errors,[]);assert.ok(uploads.every(url=>url.includes('/.netlify/functions/api/')), 'Solo se envían autenticación y eventos; no documentos ni imágenes');assert.ok(!JSON.stringify(app.state.logs).includes(sample.seller));
  // Data and pictures remain in memory, never in persistent browser storage.
  assert.equal(await page.evaluate(()=>localStorage.length+sessionStorage.length),0);
  await page.setViewportSize({width:1360,height:1000});
  await page.screenshot({path:'artifacts/contracts/desktop.png',fullPage:true});
-}finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
+}finally{await browser.close();await app.close();}

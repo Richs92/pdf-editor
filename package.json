@@ -11,7 +11,10 @@
     "test:predial": "node tests/browser/predial.mjs",
     "prepare:predial": "python3 scripts/prepare-predial.py",
     "test:water": "node tests/browser/water.mjs",
-    "prepare:water": "python3 scripts/prepare-water.py"
+    "prepare:water": "python3 scripts/prepare-water.py",
+    "test:admin": "node tests/browser/admin.mjs",
+    "test:cfe": "node tests/browser/cfe.mjs",
+    "test:access": "node --test tests/access.test.mjs tests/schema.test.mjs"
   },
   "dependencies": {
     "docx-preview": "0.3.7",
@@ -21,6 +24,7 @@
     "pizzip": "3.2.0"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.3.14",
     "playwright": "1.64.1"
   }
 }

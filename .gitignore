@@ -4,3 +4,9 @@ __pycache__/
 node_modules/
 dist/
 artifacts/
+
+netlify/private-assets/
+.env
+.env.*
+!.env.example
+.netlify/
