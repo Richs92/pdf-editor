@@ -41,3 +41,7 @@ En cada generación se lee la fecha actual del dispositivo en la zona `America/M
 Las pruebas de fechas incluyen noviembre, cambio de año y límite de mes en Mazatlán. Para comprobar la distribución fiscal después de `npm test`: `python3 tests/check_fiscal_layout.py` (requiere PyMuPDF).
 
 Las once etiquetas del eje horizontal del gráfico histórico también se actualizan con el mismo desplazamiento mensual que los finales de periodo de la tabla, en orden cronológico. Se mantienen las barras, los kWh, importes y pagos originales. Las etiquetas originales de la imagen se eliminaron de la plantilla para evitar superposiciones.
+
+## Vista previa en celular
+
+La vista previa usa PDF.js incluido localmente y dibuja todas las páginas en canvas, con ancho adaptable y sin visor PDF incrustado. Así no depende de la limitación del visor de iOS que mostraba solo la primera página. Los campos usan 16 px para evitar el zoom automático al enfocar en Safari. El viewport fija escala mínima/máxima 1 y se limitan los gestos de ampliación; algunos navegadores o ajustes de accesibilidad pueden ignorar esta restricción. Se mantiene el desplazamiento vertical normal y el PDF descargado sigue siendo el documento completo.

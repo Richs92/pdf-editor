@@ -1,3 +1,4 @@
+import {renderPreview} from './preview.js';
 import {monthOffset, shiftDate} from './dates.js';
 import { generatePDF } from './pdf-editor.js';
 const form = document.querySelector('#form');
@@ -13,9 +14,10 @@ async function render(data, currentRevision) {
   document.querySelector('#date-summary').textContent = `Fechas automáticas · Pago: ${shiftDate('04 OCT 26',offset)} · Corte: ${shiftDate('05 OCT 26',offset)} · Periodo: ${shiftDate('17 JUL 26',offset)}–${shiftDate('17 SEP 26',offset)}. Se conservan los días originales. Zona horaria: Mazatlán.`;
   const bytes = await generatePDF(window.PDFLib, templateBytes, data, now);
   if (currentRevision !== revision) return;
+  await renderPreview(bytes);
+  if (currentRevision !== revision) return;
   const previousUrl = blobUrl;
   blobUrl = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
-  document.querySelector('#preview').src = blobUrl;
   download.href = blobUrl;
   download.hidden = false;
   download.style.display = 'block';
@@ -50,3 +52,8 @@ form.addEventListener('submit', async event => {
   finally { button.disabled = false; }
 });
 initialize();
+
+// Keep the mobile layout stable while retaining ordinary one-finger scrolling.
+for (const eventName of ['gesturestart', 'gesturechange']) {
+  document.addEventListener(eventName, event => event.preventDefault(), {passive:false});
+}
