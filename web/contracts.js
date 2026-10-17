@@ -2,6 +2,7 @@ import {authorize,recordEvent} from './session.js';
 await authorize('contracts');
 import {generateContractPDF} from './contract-pdf.js';
 import {cropINEPhoto} from './ine-crop.js';
+import {signaturePad} from './signature-pad.js';
 import {autoCropINE} from './ine-detect.js';
 import {formatPagareInput,pagareAmount} from './pagare-amount.js';
 import {supportsPDFSharing,sharePDF} from './share-document.js';
@@ -9,13 +10,15 @@ import {generateWord} from './word-generator.js';
 const $=selector=>document.querySelector(selector);
 const form=$('#contract-form'), status=$('#form-status');
 let catalog=[], current, generated, sourceVersion=0, pdfCache, busy=false, rendering=false, previewTimer, queuedManual=false, disposed=false, shareTimer, shareReady=null, shareFallback=false;
+const signatureData=new Map();
 const drafts=new Map(), photoData=new Map(), templates=new Map();
 function schedulePreview(delay=650,manual=false){
  clearTimeout(previewTimer);
  if(disposed||!current)return;
  previewTimer=setTimeout(()=>{previewTimer=null;void prepareDocument({manual});},delay);
 }
-function markDirty(){
+function markDirty(keepSignatures=false){
+ if(!keepSignatures&&current&&signatureData.has(current.id)){signatureData.delete(current.id);buildSignaturePads();}
  sourceVersion++;generated=null;pdfCache=null;shareReady=null;shareFallback=false;clearTimeout(shareTimer);$('#exports').hidden=true;
  status.textContent='La vista previa se actualizará automáticamente.';
  $('#preview-state').textContent='Cambios pendientes · actualizando…';$('#document-preview').setAttribute('aria-busy','true');
@@ -51,8 +54,15 @@ function selectDocument(item){
     input.value=drafts.get(item.id)?.[field.key]??field.default;wrapper.append(label,input);if(['sellerId','buyerId'].includes(field.key)){const hint=document.createElement('p');hint.className='hint';hint.textContent='Tipo INE y número del reverso (CIC u OCR). Escribe el número tal como aparece en la credencial.';wrapper.append(hint);}groups.get(field.group).append(wrapper);
   }
   syncMoneyAmounts();
-  buildPhotoCards();$('#exports').hidden=true;status.textContent='La vista previa se actualiza automáticamente. Puedes dejar campos vacíos.';
+  buildPhotoCards();buildSignaturePads();$('#exports').hidden=true;status.textContent='La vista previa se actualiza automáticamente. Puedes dejar campos vacíos.';
   $('#document-preview').replaceChildren();const empty=document.createElement('div');empty.className='empty';empty.textContent='Cargando vista previa del documento…';$('#document-preview').append(empty);schedulePreview(0);
+}
+function buildSignaturePads(){
+ const section=$('#signature-section'),area=$('#signature-pads');area.replaceChildren();section.hidden=current?.id!=='recibo-apartado';if(section.hidden)return;
+ const id=current.id;
+ for(const [person,label]of [['buyer','Comprador · Entrega'],['seller','Asesor/vendedor · Recibe']]){
+  area.append(signaturePad(label,signatureData.get(id)?.[person],signature=>{if(current.id!==id)return;signatureData.set(id,{...signatureData.get(id),[person]:signature});markDirty(true);buildSignaturePads();},()=>{const values={...signatureData.get(id)};delete values[person];signatureData.set(id,values);markDirty(true);buildSignaturePads();}));
+ }
 }
 function photoSlots(){
  const note=current.id==='pagare',receipt=current.id==='recibo-apartado';
@@ -150,7 +160,7 @@ async function prepareDocument({manual=false}={}){
  try{
   let template=templates.get(item.id);if(!template){const response=await fetch('./'+item.template);if(!response.ok)throw Error('No se pudo cargar la plantilla.');template=new Uint8Array(await response.arrayBuffer());templates.set(item.id,template);}
   if(!isCurrent())return;
-  const bytes=await generateWord(template,item,data,photos);
+  const bytes=await generateWord(template,item,data,photos,signatureData.get(item.id)||{});
   if(!isCurrent())return;
   await renderDocument(bytes,isCurrent);
   if(!isCurrent())return;
@@ -168,7 +178,7 @@ async function prepareDocument({manual=false}={}){
   if(queuedManual){queuedManual=false;schedulePreview(0,true);}else if(!isCurrent())schedulePreview();
  }
 }
-form.addEventListener('submit',event=>{event.preventDefault();if(current?.id==='pagare')syncMoneyAmounts();saveDraft();markDirty();void prepareDocument({manual:true});});
+form.addEventListener('submit',event=>{event.preventDefault();if(current?.id==='pagare')syncMoneyAmounts();saveDraft();markDirty(true);void prepareDocument({manual:true});});
 
 function pdfForReady(ready){
  if(pdfCache?.ready===ready)return pdfCache.promise;

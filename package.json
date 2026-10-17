@@ -19,7 +19,8 @@
     "test:ine": "node tests/browser/ine-crop.mjs",
     "test:contract-preview": "node tests/browser/contract-preview.mjs",
     "test:share": "node tests/browser/share.mjs",
-    "test:ine-crop": "node tests/browser/ine-crop.mjs"
+    "test:ine-crop": "node tests/browser/ine-crop.mjs",
+    "test:signatures": "node tests/browser/signatures.mjs"
   },
   "dependencies": {
     "@pdf-lib/fontkit": "1.1.1",

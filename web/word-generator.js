@@ -75,7 +75,7 @@ export function groupINEPhotos(photos,documentId){
     return selected.length?[{person,title,photos:selected}]:[];
   });
 }
-export async function generateWord(templateBytes, contract, data, photos=[]) {
+export async function generateWord(templateBytes, contract, data, photos=[], signatures={}) {
   const values = validateContract(contract,data);
   const zip = new window.PizZip(templateBytes);
   for (const filename of Object.keys(zip.files).filter(name => /^word\/(document|header\d*|footer\d*)\.xml$/.test(name))) {
@@ -112,6 +112,7 @@ export async function generateWord(templateBytes, contract, data, photos=[]) {
     zip.file(relPath,new XMLSerializer().serializeToString(rels));
     zip.file('[Content_Types].xml',new XMLSerializer().serializeToString(types));
   }
+  if(contract.id==='recibo-apartado')addSignatures(zip,values,signatures);
   addPageNumbers(zip);
   return zip.generate({type:'uint8array',compression:'DEFLATE'});
 }
@@ -130,5 +131,21 @@ function addPageNumbers(zip){
  const field=instruction=>`<w:fldSimple w:instr="${instruction}" w:dirty="true"><w:r><w:t>1</w:t></w:r></w:fldSimple>`;
  zip.file('word/'+target,`<w:ftr xmlns:w="${W}"><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="18"/></w:rPr><w:t xml:space="preserve">Página </w:t></w:r>${field('PAGE')}<w:r><w:t xml:space="preserve"> de </w:t></w:r>${field('NUMPAGES')}</w:p></w:ftr>`);
  if(zip.file('word/settings.xml')){const settings=parseXML(zip.file('word/settings.xml').asText());let update=settings.getElementsByTagNameNS(W,'updateFields')[0];if(!update){update=settings.createElementNS(W,'w:updateFields');settings.documentElement.append(update);}update.setAttributeNS(W,'w:val','true');zip.file('word/settings.xml',new XMLSerializer().serializeToString(settings));}
+ for(const [path,xml]of [['word/document.xml',doc],['word/_rels/document.xml.rels',rels],['[Content_Types].xml',types]])zip.file(path,new XMLSerializer().serializeToString(xml));
+}
+
+function addSignatures(zip,values,signatures){
+ const doc=parseXML(zip.file('word/document.xml').asText()),rels=parseXML(zip.file('word/_rels/document.xml.rels').asText()),types=parseXML(zip.file('[Content_Types].xml').asText());
+ for(const [index,person,label]of [[0,'buyer','Entrega'],[1,'seller','Recibe']]){
+  const signature=signatures[person];if(!signature)continue;
+  const cell=[...doc.getElementsByTagNameNS(W,'tc')].find(cell=>cell.textContent.trim().endsWith(label));if(!cell)throw Error('No se encontró el espacio de firma de '+label+'.');
+  const id='rIdTerminavitSignature'+index,target='media/terminavit-signature-'+person+'.png';zip.file('word/'+target,signature.bytes);
+  const rel=rels.createElementNS(rels.documentElement.namespaceURI,'Relationship');rel.setAttribute('Id',id);rel.setAttribute('Type',R+'/image');rel.setAttribute('Target',target);rels.documentElement.append(rel);
+  const scale=Math.min(2.2*914400/signature.width,.65*914400/signature.height);
+  const fragment=parseXML(`<w:body xmlns:w="${W}" xmlns:r="${R}">${photoXML(9000+index,id,signature.width*scale,signature.height*scale)}${paragraph(values[person])}${paragraph(label)}</w:body>`);
+  for(const node of [...cell.children])if(node.localName!=='tcPr')node.remove();
+  for(const node of [...fragment.documentElement.children])cell.append(doc.importNode(node,true));
+ }
+ if(Object.values(signatures).some(Boolean)&&![...types.documentElement.children].some(node=>node.getAttribute('Extension')==='png')){const type=types.createElementNS(types.documentElement.namespaceURI,'Default');type.setAttribute('Extension','png');type.setAttribute('ContentType','image/png');types.documentElement.append(type);}
  for(const [path,xml]of [['word/document.xml',doc],['word/_rels/document.xml.rels',rels],['[Content_Types].xml',types]])zip.file(path,new XMLSerializer().serializeToString(xml));
 }
