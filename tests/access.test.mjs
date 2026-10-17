@@ -100,6 +100,9 @@ test('admin: errores accionables sin exponer datos de Supabase',async()=>{
  result=await client().call('/auth/login',{method:'POST',body:{username:'admin',password:'short'}});assert.match(result.data.error,/12 caracteres/);
  for(const [path,method,status,code,expected] of [
  ['/rest/v1/app_users','GET',404,'PGRST205',/Faltan las tablas/],
+ ['/rest/v1/app_users','GET',400,'42703',/HTTP 400 · 42703 · perfiles/],
+ ['/rest/v1/rpc/app_write_audit','POST',400,'23502',/HTTP 400 · 23502 · registro de actividad/],
+ ['/auth/v1/admin/users/'+ADMIN_ID,'PUT',500,'unexpected_failure',/HTTP 500 · unexpected_failure · activación de cuenta/],
  ['/rest/v1/app_users','GET',403,'42501',/service_role/],
  ['/auth/v1/admin/users/'+ADMIN_ID,'PUT',422,'weak_password',/Supabase rechazó la contraseña/],
  ['/rest/v1/rpc/app_write_audit','POST',404,'PGRST202',/Faltan funciones/]

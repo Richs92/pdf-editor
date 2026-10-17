@@ -21,6 +21,10 @@ async function supabase(path,{method='GET',body,token,headers={}}={}){
   else if(code==='PGRST205'||code==='42P01'){message='Faltan las tablas de acceso en el proyecto de Supabase conectado a Netlify. Revisa SUPABASE_URL y ejecuta supabase/setup.sql en ese proyecto.';status=503;}
   else if(code==='PGRST202'||code==='42883'){message='Faltan funciones de acceso en Supabase o están desactualizadas. Ejecuta de nuevo supabase/setup.sql en el proyecto conectado a Netlify.';status=503;}
   else if(code==='42501'||path.startsWith('/rest/v1/')&&[401,403].includes(response.status)||path.startsWith('/auth/v1/admin/')&&[401,403].includes(response.status)){message='Netlify no tiene permisos de administrador en Supabase. Revisa que SUPABASE_SERVICE_ROLE_KEY sea la clave service_role del mismo proyecto que SUPABASE_URL, disponible para Functions.';status=503;}
+  const operation=path.startsWith('/rest/v1/app_users')?'perfiles':path.startsWith('/rest/v1/app_permissions')?'permisos':path.startsWith('/rest/v1/rpc/app_write_audit')?'registro de actividad':path.startsWith('/rest/v1/rpc/')?'funciones de acceso':path.startsWith('/auth/v1/admin/users')?'activación de cuenta':path.startsWith('/auth/v1/token')?'inicio de sesión':'servicio de acceso';
+  const safeCode=typeof code==='string'&&/^[a-zA-Z0-9_]{1,50}$/.test(code)?code:'SIN_CODIGO';
+  if(message==='No se pudo completar la operación.')message='Supabase rechazó la operación de '+operation+'.';
+  message+=' [HTTP '+response.status+' · '+safeCode+' · '+operation+']';
   const error=new HTTPError(status,message);error.upstream=result;throw error;}
  return result;
 }
