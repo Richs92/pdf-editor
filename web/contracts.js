@@ -2,8 +2,7 @@ import {authorize,recordEvent} from './session.js';
 await authorize('contracts');
 import {generateContractPDF} from './contract-pdf.js';
 import {cropINEPhoto} from './ine-crop.js';
-import {recognizeINE} from './ine-ocr.js';
-import {extractINEFields,ineTargetFields,ineFieldSelection} from './ine-fields.js';
+import {autoCropINE} from './ine-detect.js';
 import {formatPagareInput,pagareAmount} from './pagare-amount.js';
 import {supportsPDFSharing,sharePDF} from './share-document.js';
 import {generateWord} from './word-generator.js';
@@ -49,7 +48,7 @@ function selectDocument(item){
     if(item.id==='pagare'&&field.key==='amount'){input.inputMode='decimal';input.maxLength=14;input.placeholder='Ej. 10,000';}
     if(item.id==='pagare'&&field.key==='amountWords'){input.readOnly=true;input.placeholder='Se calcula automáticamente con el importe';}
     if(field.type==='number'){input.type='number';input.min='0';input.step='1';input.inputMode='numeric';}
-    input.value=drafts.get(item.id)?.[field.key]??field.default;wrapper.append(label,input);if(['sellerId','buyerId'].includes(field.key)){const hint=document.createElement('p');hint.className='hint';hint.textContent='Tipo INE y número del reverso (CIC u OCR). Revisa el dato detectado antes de aplicarlo.';wrapper.append(hint);}groups.get(field.group).append(wrapper);
+    input.value=drafts.get(item.id)?.[field.key]??field.default;wrapper.append(label,input);if(['sellerId','buyerId'].includes(field.key)){const hint=document.createElement('p');hint.className='hint';hint.textContent='Tipo INE y número del reverso (CIC u OCR). Escribe el número tal como aparece en la credencial.';wrapper.append(hint);}groups.get(field.group).append(wrapper);
   }
   if(item.id==='pagare')syncPagareAmount();
   buildPhotoCards();$('#exports').hidden=true;status.textContent='La vista previa se actualiza automáticamente. Puedes dejar campos vacíos.';
@@ -66,7 +65,7 @@ async function readPhoto(file){
     const canvas=document.createElement('canvas');canvas.width=Math.round(img.naturalWidth*scale);canvas.height=Math.round(img.naturalHeight*scale);
     const context=canvas.getContext('2d');context.fillStyle='white';context.fillRect(0,0,canvas.width,canvas.height);context.drawImage(img,0,0,canvas.width,canvas.height);
     const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',.88));if(!blob)throw Error('No se pudo convertir la imagen.');
-    return {bytes:new Uint8Array(await blob.arrayBuffer()),width:canvas.width,height:canvas.height,preview:URL.createObjectURL(blob),source:file,needsCrop:img.naturalWidth/img.naturalHeight<1.2||img.naturalWidth/img.naturalHeight>2.1};
+    return {bytes:new Uint8Array(await blob.arrayBuffer()),width:canvas.width,height:canvas.height,preview:URL.createObjectURL(blob),source:file};
   }catch(error){if(error.message.includes('15 MB'))throw error;throw Error('No se pudo leer la imagen. Prueba con una foto JPG o PNG.');}finally{URL.revokeObjectURL(url);}
 }
 function buildPhotoCards(){
@@ -78,56 +77,22 @@ function buildPhotoCards(){
    const label=document.createElement('label');label.textContent=camera?'Tomar foto':'Subir imagen';const input=document.createElement('input');input.type='file';input.accept='image/*';input.hidden=true;input.setAttribute('aria-label',(camera?'Tomar foto: ':'Subir imagen: ')+slot.label);if(camera)input.capture='environment';label.append(input);
    input.addEventListener('change',async()=>{
     if(!input.files[0])return;label.style.opacity='.5';status.textContent='Procesando imagen…';
-    try{let photo=await readPhoto(input.files[0]);if(photo.needsCrop){const cropped=await cropINEPhoto(input.files[0]);if(!cropped){URL.revokeObjectURL(photo.preview);status.textContent='Foto cancelada.';return;}if(cropped!==input.files[0]){const source=input.files[0];URL.revokeObjectURL(photo.preview);photo=await readPhoto(cropped);photo.source=source;photo.ocrSource=cropped;}}const previous=photoData.get(key);if(previous){previous.ocr?.controller?.abort();URL.revokeObjectURL(previous.preview);}photoData.set(key,photo);if(current.id===documentId){markDirty();buildPhotoCards();status.textContent='INE añadida. Revisa sus datos; la vista previa incluirá el anexo automáticamente.';}void scanPhoto(documentId,slot,photo);}catch(error){status.textContent=error.message;}finally{label.style.opacity='1';input.value='';}
+    try{
+     const source=input.files[0];if(source.size>15*1024*1024)throw Error('La imagen no debe superar 15 MB.');
+     const result=await autoCropINE(source),photo=await readPhoto(result.blob);photo.source=source;photo.autoCropped=result.detected;
+     const previous=photoData.get(key);if(previous)URL.revokeObjectURL(previous.preview);photoData.set(key,photo);
+     if(current.id===documentId){markDirty();buildPhotoCards();status.textContent='INE añadida. La vista previa incluirá el anexo automáticamente.';}
+    }catch(error){status.textContent=error.message;}finally{label.style.opacity='1';input.value='';}
    });controls.append(label);
   }
   const photo=photoData.get(key);
   if(photo){const crop=document.createElement('button');crop.type='button';crop.textContent='Recortar INE';crop.addEventListener('click',async()=>{
-   try{photo.ocr?.controller?.abort();const cropped=await cropINEPhoto(photo.source);if(!cropped){if(photo.ocr?.state==='reading'){photo.ocr=null;buildPhotoCards();}return;}
+   try{const cropped=await cropINEPhoto(photo.source);if(!cropped)return;
    if(photoData.get(key)!==photo)return;
-   const replacement=await readPhoto(cropped);replacement.source=photo.source;replacement.ocrSource=cropped;URL.revokeObjectURL(photo.preview);photoData.set(key,replacement);if(current.id===documentId){markDirty();buildPhotoCards();}void scanPhoto(documentId,slot,replacement);}catch{status.textContent='No se pudo recortar la foto. Inténtalo de nuevo o sube otra imagen.';}
-  });controls.append(crop);const remove=document.createElement('button');remove.type='button';remove.textContent='Quitar foto';remove.addEventListener('click',()=>{photo.ocr?.controller?.abort();URL.revokeObjectURL(photo.preview);photoData.delete(key);markDirty();buildPhotoCards();});controls.append(remove);}
-  card.append(controls);if(photo){const img=document.createElement('img');img.src=photo.preview;img.alt=slot.label;card.append(img);buildOCRReview(card,documentId,slot,photo);}area.append(card);
+   const replacement=await readPhoto(cropped);replacement.source=photo.source;replacement.manualCrop=true;URL.revokeObjectURL(photo.preview);photoData.set(key,replacement);if(current.id===documentId){markDirty();buildPhotoCards();}}catch{status.textContent='No se pudo recortar la foto. Inténtalo de nuevo o sube otra imagen.';}
+  });controls.append(crop);const remove=document.createElement('button');remove.type='button';remove.textContent='Quitar foto';remove.addEventListener('click',()=>{URL.revokeObjectURL(photo.preview);photoData.delete(key);markDirty();buildPhotoCards();});controls.append(remove);}
+  card.append(controls);if(photo){const img=document.createElement('img');img.src=photo.preview;img.alt=slot.label;card.append(img);const note=document.createElement('p');note.className='hint';note.textContent=photo.manualCrop?'Recorte ajustado manualmente.':photo.autoCropped?'Recorte automático aplicado. Revisa que se vea la credencial completa.':'No se detectaron los bordes con suficiente claridad. Se conserva la foto completa; puedes usar Recortar INE.';card.append(note);}area.append(card);
  }
-}
-async function scanPhoto(documentId,slot,photo){
- if(photo.ocr?.state==='reading')return;
- const controller=new AbortController();photo.ocr={state:'reading',message:'Lectura en espera…',controller};
- const visible=()=>current.id===documentId&&photoData.get(documentId+'-'+slot.key)===photo;
- if(visible())buildPhotoCards();
- try{
-  const result=await recognizeINE(photo.ocrSource||photo.source||photo.preview,{signal:controller.signal,face:slot.key.endsWith('-back')?'back':'front',onProgress:message=>{photo.ocr.message=message;if(visible()){const node=document.querySelector(`[data-ocr-status="${slot.key}"]`);if(node)node.textContent=message;}}});
-  if(controller.signal.aborted)return;
-  const values=extractINEFields(result.text,{face:slot.key.endsWith('-back')?'back':'front'});photo.ocr={state:'ready',values,selected:ineFieldSelection(values,{text:result.text,confidence:result.confidence,needsCrop:photo.needsCrop}),confidence:result.confidence};
- }catch(error){if(controller.signal.aborted)return;photo.ocr={state:'error',message:error.message||'No se pudo leer la INE. Puedes volver a intentar o llenar el formulario manualmente.'};}
- if(visible())buildPhotoCards();
-}
-function buildOCRReview(card,documentId,slot,photo){
- const ocr=photo.ocr,area=document.createElement('div');area.className='ocr-review';area.dataset.ocrSlot=slot.key;card.append(area);
- const message=document.createElement('p');message.className='hint';message.setAttribute('role','status');message.dataset.ocrStatus=slot.key;area.append(message);
- const read=document.createElement('button');read.type='button';read.className='secondary';read.textContent=ocr?'Volver a leer INE':'Leer datos de INE';read.disabled=ocr?.state==='reading';read.addEventListener('click',()=>scanPhoto(documentId,slot,photo));area.append(read);
- if(!ocr){message.textContent='El reverso permite detectar el CIC o el número OCR, si se leen claramente.';return;}
- if(ocr.state==='reading'){message.textContent=ocr.message;return;}
- if(ocr.state==='error'){message.textContent='No se pudo completar la lectura. La foto sigue adjunta; puedes llenar el formulario manualmente o volver a intentar.';return;}
- message.textContent=photo.needsCrop?'La foto incluye demasiado fondo o está de lado. Usa Recortar INE antes de aplicar los datos.':Object.values(ocr.values).some(Boolean)?'Revisa y corrige los datos antes de aplicarlos. '+(ocr.confidence<80?'La lectura tiene baja confianza; compárala con la foto.':''):'No se detectaron datos con claridad. Puedes escribirlos aquí o probar otra foto.';
- const targets=ineTargetFields(documentId,slot.key.split('-')[0]);
- for(const [key,label]of Object.entries({name:'Nombre detectado',address:'Domicilio detectado',identification:'Identificación detectada'})){
-  if(!targets[key]||slot.key.endsWith('-front')&&key==='identification'||slot.key.endsWith('-back')&&key!=='identification')continue;
-  const field=document.createElement('div');field.className='field';const id='ocr-'+slot.key+'-'+key;
-  const title=document.createElement('label');title.htmlFor=id;title.textContent=label;
-  const input=document.createElement(key==='address'?'textarea':'input');input.id=id;input.value=ocr.values[key];input.maxLength=4000;input.dataset.ocrField=key;input.placeholder='No detectado con claridad; escríbelo o recorta la foto';
-  input.addEventListener('input',()=>{ocr.values[key]=input.value;});
-  const selectLabel=document.createElement('label');selectLabel.className='ocr-check';const check=document.createElement('input');check.type='checkbox';check.checked=ocr.selected[key];check.setAttribute('aria-label','Usar '+label.toLowerCase());check.addEventListener('change',()=>ocr.selected[key]=check.checked);selectLabel.append(check,document.createTextNode('Usar este dato'));
-  field.append(title,input,selectLabel);area.append(field);
- }
- const apply=document.createElement('button');apply.type='button';apply.className='primary';apply.textContent='Aplicar datos revisados';apply.addEventListener('click',()=>{
-  if(current.id!==documentId||photoData.get(documentId+'-'+slot.key)!==photo)return;
-  const updates=Object.entries(targets).filter(([key])=>ocr.selected[key]&&ocr.values[key].trim()).map(([key,target])=>({input:form.elements[target],value:ocr.values[key].trim().replace(/\r?\n/g,', ')})).filter(item=>item.input);
-  if(!updates.length){message.textContent='Selecciona al menos un dato con contenido para aplicar.';return;}
-  if(updates.some(({input,value})=>input.value.trim()&&input.value.trim()!==value)&&!confirm('Los datos seleccionados reemplazarán información que ya está escrita en el formulario. ¿Continuar?'))return;
-  for(const {input,value}of updates)input.value=value;
-  saveDraft();markDirty();message.textContent='Datos aplicados al formulario. Puedes seguir editándolos.';status.textContent='Datos de INE aplicados. Actualizando la vista previa automáticamente.';
- });area.append(apply);
 }
 function lock(value){busy=value;document.querySelectorAll('.actions button,.tab,.template-choice').forEach(button=>button.disabled=value);if(!value)updateShareButton();}
 function fitPreview(){
@@ -257,4 +222,4 @@ for(const button of document.querySelectorAll('.tab'))button.addEventListener('c
 for(const event of ['gesturestart','gesturechange'])document.addEventListener(event,e=>e.preventDefault(),{passive:false});
 try{const response=await fetch('./contracts-catalog.json');if(!response.ok)throw Error('No se pudo cargar el catálogo.');catalog=await response.json();setGroup('Ratificados');$('#workspace').hidden=false;$('#loading').hidden=true;}catch(error){$('#loading').textContent=error.message;}
 
-window.addEventListener('pagehide',()=>{disposed=true;clearTimeout(previewTimer);clearTimeout(shareTimer);for(const photo of photoData.values())photo.ocr?.controller?.abort();});
+window.addEventListener('pagehide',()=>{disposed=true;clearTimeout(previewTimer);clearTimeout(shareTimer);});

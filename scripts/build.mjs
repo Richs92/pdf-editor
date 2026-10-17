@@ -14,14 +14,6 @@ for (const name of ['standard_fonts','cmaps']) {
 for (const [source,target] of [['pizzip/dist/pizzip.min.js','pizzip.min.js'],['jszip/dist/jszip.min.js','jszip.min.js'],['docx-preview/dist/docx-preview.min.js','docx-preview.min.js'],['pdfmake/build/pdfmake.min.js','pdfmake.min.js']]) {
   await cp('node_modules/'+source, 'dist/vendor/'+target);
 }
-// Ship OCR locally: no CDN requests and no IndexedDB language/image cache.
-await mkdir('dist/vendor/ocr',{recursive:true});
-for(const file of ['tesseract.esm.min.js','worker.min.js','tesseract.min.js.LICENSE.txt','worker.min.js.LICENSE.txt'])await cp('node_modules/tesseract.js/dist/'+file,'dist/vendor/ocr/'+file);
-for(const file of ['tesseract-core-lstm.wasm.js','tesseract-core-lstm.wasm'])await cp('node_modules/tesseract.js-core/'+file,'dist/vendor/ocr/'+file);
-await cp('node_modules/tesseract.js-core/LICENSE','dist/vendor/ocr/core-LICENSE');
-await cp('node_modules/tesseract.js/LICENSE.md','dist/vendor/ocr/tesseract-LICENSE.md');
-
-await cp('node_modules/@tesseract.js-data/spa/4.0.0_best_int/spa.traineddata.gz','dist/vendor/ocr/spa.traineddata.gz');
 // Personal templates and module entry pages are served only after server auth.
 await rm('netlify/private-assets',{recursive:true,force:true});
 await mkdir('netlify/private-assets',{recursive:true});

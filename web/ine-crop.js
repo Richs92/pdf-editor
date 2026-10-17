@@ -12,7 +12,7 @@ function cropDialog(image,source){return new Promise(resolve=>{
  const stage=document.createElement('canvas');
  const buttons=document.createElement('div');buttons.className='crop-actions';
  const makeButton=text=>{const button=document.createElement('button');button.type='button';button.textContent=text;buttons.append(button);return button;};
- const rotate=makeButton('Girar 90°'),reset=makeButton('Restablecer'),use=makeButton('Usar recorte y leer'),whole=makeButton('Usar foto completa'),cancel=makeButton('Cancelar');
+ const rotate=makeButton('Girar 90°'),reset=makeButton('Restablecer'),use=makeButton('Usar recorte'),whole=makeButton('Usar foto completa'),cancel=makeButton('Cancelar');
  const status=document.createElement('p');status.setAttribute('role','status');
  let finished=false;function finish(value){if(finished)return;finished=true;dialog.close();dialog.remove();resolve(value);}
  function draw(){
