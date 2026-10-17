@@ -57,3 +57,20 @@ test('crear, contraseña aleatoria, cambio obligatorio, permisos, reset y log',a
  const users=await admin.call('/admin/users');assert.ok(!JSON.stringify(users.data).includes(password));assert.ok(!JSON.stringify(app.state.logs).includes(password));assert.ok(!JSON.stringify(app.state.logs).includes(reset.data.temporaryPassword));
  assert.equal((await admin.call('/auth/logout',{method:'POST',body:{}})).status,200);assert.equal((await admin.call('/me')).status,401);
 });
+
+test('recuperación: prueba de correo de un solo uso, sin contraseña anterior',async()=>{
+ const anonymous=client(),tokenHash='test-recovery-hash-01234567890123456789';app.state.recovery.set(tokenHash,USER_ID);
+ assert.equal((await anonymous.call('/auth/recover',{method:'POST',body:{password:'New-recovered-password-123!',tokenHash:'invalid-token'}})).status,400);
+ const short=await anonymous.call('/auth/recover',{method:'POST',body:{password:'short',tokenHash}});assert.equal(short.status,400);assert.ok(app.state.recovery.has(tokenHash));
+ const changed=await anonymous.call('/auth/recover',{method:'POST',body:{password:'New-recovered-password-123!',tokenHash,userId:ADMIN_ID}});assert.equal(changed.status,200);
+ assert.equal(app.state.auth.find(u=>u.id===USER_ID).password,'New-recovered-password-123!');assert.equal(app.state.auth.find(u=>u.id===ADMIN_ID).password,ADMIN_PASSWORD);
+ const reused=await anonymous.call('/auth/recover',{method:'POST',body:{password:'Other-new-password-123!',tokenHash}});assert.equal(reused.status,400);assert.equal(reused.data.code,'RECOVERY_EXPIRED');
+ assert.ok(app.state.logs.some(log=>log.actor_id===USER_ID&&log.action==='password_recovered'));
+ assert.ok(!JSON.stringify(app.state.logs).includes(tokenHash));
+});
+
+test('recuperación compatible con el enlace predeterminado de Supabase',async()=>{
+ const anonymous=client();const token='test.valid.recovery_signature';app.state.tokens.set(token,USER_ID);
+ const expired=await anonymous.call('/auth/recover',{method:'POST',body:{password:'Recovery-implicit-password-123!',accessToken:'fake.invalid.signature'}});assert.equal(expired.data.code,'RECOVERY_EXPIRED');
+ const result=await anonymous.call('/auth/recover',{method:'POST',body:{password:'Recovery-implicit-password-123!',accessToken:token}});assert.equal(result.status,200);assert.equal(app.state.auth.find(u=>u.id===USER_ID).password,'Recovery-implicit-password-123!');
+});

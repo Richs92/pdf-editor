@@ -10,7 +10,7 @@ export const ADMIN_PASSWORD='Admin-test-password-123!',USER_PASSWORD='Staff-test
 async function listen(server){await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));return 'http://127.0.0.1:'+server.address().port;}
 async function incoming(request){const chunks=[];for await(const part of request)chunks.push(part);return Buffer.concat(chunks).toString();}
 export async function startTestApp(){
- const state={users:[{id:ADMIN_ID,email:'admin@example.test',display_name:'Administrador de prueba',role:'admin',active:true,must_change_password:false,created_at:'2026-01-01T00:00:00Z'},{id:USER_ID,email:'staff@example.test',display_name:'Usuario de prueba',role:'user',active:true,must_change_password:false,created_at:'2026-01-02T00:00:00Z'}],auth:[{id:ADMIN_ID,email:'admin@example.test',password:ADMIN_PASSWORD},{id:USER_ID,email:'staff@example.test',password:USER_PASSWORD}],permissions:[{user_id:USER_ID,module:'cfe'},{user_id:USER_ID,module:'water'}],logs:[],tokens:new Map(),refresh:new Map(),calls:[]};
+ const state={users:[{id:ADMIN_ID,email:'admin@example.test',display_name:'Administrador de prueba',role:'admin',active:true,must_change_password:false,created_at:'2026-01-01T00:00:00Z'},{id:USER_ID,email:'staff@example.test',display_name:'Usuario de prueba',role:'user',active:true,must_change_password:false,created_at:'2026-01-02T00:00:00Z'}],auth:[{id:ADMIN_ID,email:'admin@example.test',password:ADMIN_PASSWORD},{id:USER_ID,email:'staff@example.test',password:USER_PASSWORD}],permissions:[{user_id:USER_ID,module:'cfe'},{user_id:USER_ID,module:'water'}],logs:[],tokens:new Map(),refresh:new Map(),recovery:new Map(),calls:[]};
  function session(user){const access_token='test-access-'+randomUUID(),refresh_token='test-refresh-'+randomUUID();state.tokens.set(access_token,user.id);state.refresh.set(refresh_token,user.id);return {access_token,refresh_token,expires_in:3600,user:{id:user.id,email:user.email}};}
  function actor(data){const user=state.users.find(u=>u.id===data.p_actor);if(!user||!user.active||user.must_change_password||user.role!=='admin')throw Error('Admin required');return user;}
  function log(data){const user=state.users.find(u=>u.id===data.p_actor);state.logs.push({id:state.logs.length+1,occurred_at:new Date().toISOString(),actor_id:data.p_actor||null,actor_email:user?.email||data.p_email||null,action:data.p_action,module:data.p_module||null,target_id:data.p_target||null,source:data.p_source||'server',details:data.p_details||{}});}
@@ -20,6 +20,7 @@ export async function startTestApp(){
   if(request.headers.apikey!=='test-service-key')return send(401,{});
   state.calls.push({method:request.method,path:url.pathname,body});
   try{
+   if(url.pathname==='/auth/v1/verify'){const id=body.type==='recovery'?state.recovery.get(body.token_hash):null;const user=state.auth.find(u=>u.id===id);if(!user)return send(403,{code:'otp_expired'});state.recovery.delete(body.token_hash);return send(200,session(user));}
    if(url.pathname==='/auth/v1/token'){
     const user=url.searchParams.get('grant_type')==='refresh_token'?state.auth.find(u=>u.id===state.refresh.get(body.refresh_token)):state.auth.find(u=>u.email===body.email&&u.password===body.password);
     if(!user)return send(400,{code:'invalid_credentials'});return send(200,session(user));

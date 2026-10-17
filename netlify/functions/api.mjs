@@ -92,6 +92,19 @@ export async function handler(event){
    return await content({...event,queryStringParameters:{...event.queryStringParameters,path:requested}},context);
   }
   if(path==='/auth/login'&&method==='POST')return await login(event,context);
+  if(path==='/auth/recover'&&method==='POST'){
+   const data=bodyJSON(event),password=passwordText(data.password,'la nueva contraseña');if(password.length<12)throw new HTTPError(400,'La contraseña debe tener al menos 12 caracteres.');
+   let token,verified;
+   if(typeof data.tokenHash==='string'&&/^[a-zA-Z0-9_-]{20,256}$/.test(data.tokenHash)){
+    try{verified=await supabase('/auth/v1/verify',{method:'POST',body:{token_hash:data.tokenHash,type:'recovery'}});token=verified.access_token;}catch(error){if([400,401,403,422].includes(error.status))throw new HTTPError(400,'El enlace ya fue utilizado o venció. Solicita un correo nuevo.','RECOVERY_EXPIRED');throw error;}
+   }else if(typeof data.accessToken==='string'&&data.accessToken.length<=8192&&/^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+$/.test(data.accessToken))token=data.accessToken;
+   else throw new HTTPError(400,'Abre el enlace del correo de recuperación.','RECOVERY_REQUIRED');
+   let auth;try{auth=await supabase('/auth/v1/user',{token});}catch(error){if([401,403].includes(error.status))throw new HTTPError(400,'El enlace ya fue utilizado o venció. Solicita un correo nuevo.','RECOVERY_EXPIRED');throw error;}
+   const profiles=await supabase('/rest/v1/app_users?id=eq.'+encodeURIComponent(auth.id)+'&select=*');const user=profiles?.[0];
+   if(!user?.active)throw new HTTPError(403,'Esta cuenta no tiene acceso activo. Contacta al administrador.');
+   context.user=user;await supabase('/auth/v1/user',{method:'PUT',token,body:{password}});await rpc('app_password_changed',{p_actor:user.id});await audit(context,'password_recovered');
+   await supabase('/auth/v1/logout?scope=local',{method:'POST',token}).catch(()=>{});clearSession(context);return json(context,200,{ok:true});
+  }
   await authenticate(event,context);
   if(path==='/me'&&method==='GET')return json(context,200,{user:context.user,modules:context.modules});
   if(path==='/auth/logout'&&method==='POST'){await audit(context,'logout');await supabase('/auth/v1/logout?scope=local',{method:'POST',token:context.token});clearSession(context);return json(context,200,{ok:true});}

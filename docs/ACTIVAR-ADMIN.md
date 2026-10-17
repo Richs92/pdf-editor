@@ -57,7 +57,20 @@ No se guardan contraseñas, contenido de formularios, archivos generados ni foto
 
 La protección se aplica a las páginas y plantillas del nuevo despliegue. No cambia la visibilidad del repositorio, despliegues históricos ni archivos que ya se hayan descargado. Las credenciales de cada usuario son personales; si se comparten, el log identifica la cuenta utilizada.
 
-Para recuperar la cuenta administradora, cambia su contraseña desde Supabase Authentication. No se incluye una contraseña maestra ni una ruta de recuperación sin autenticación.
+Para recuperar la cuenta administradora, configura primero **Authentication → URL Configuration**:
+
+- **Site URL**: `https://pdfeditorterminavit.netlify.app`
+- **Redirect URLs**: agrega `https://pdfeditorterminavit.netlify.app/recover.html` y la URL raíz de tu sitio.
+
+Luego envía un correo nuevo desde **Authentication → Users → usuario → Send password recovery**. Usa solo el correo más reciente. La página `/recover.html` permite establecer una contraseña nueva sin pedir la anterior. Soporta el enlace predeterminado de Supabase (sesión de recuperación en el fragmento URL) y la variante de token hash de un solo uso. Los tokens se retiran inmediatamente de la URL del navegador y nunca se registran en el log.
+
+Si el proveedor de correo consume enlaces automáticamente y el predeterminado vuelve a aparecer vencido, en **Authentication → Emails → Reset password** puede usarse este enlace, que solo se verifica al guardar la contraseña:
+
+```html
+<a href="{{ .SiteURL }}/recover.html#token_hash={{ .TokenHash }}&amp;type=recovery">Cambiar mi contraseña</a>
+```
+
+Después de modificar la plantilla, solicita un correo nuevo. No se incluye una contraseña maestra ni una ruta de recuperación sin autenticación.
 
 Si ves “El administrador aún no ha activado el acceso al sistema”, comprueba las dos variables en Functions y vuelve a desplegar. Si Supabase tiene el proyecto pausado, reanúdalo desde su panel. Si la cuenta autentica pero no tiene perfil, verifica que ejecutaste ambos scripts SQL con el correo correcto.
 

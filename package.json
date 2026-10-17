@@ -14,7 +14,8 @@
     "prepare:water": "python3 scripts/prepare-water.py",
     "test:admin": "node tests/browser/admin.mjs",
     "test:cfe": "node tests/browser/cfe.mjs",
-    "test:access": "node --test tests/access.test.mjs tests/schema.test.mjs"
+    "test:access": "node --test tests/access.test.mjs tests/schema.test.mjs",
+    "test:recovery": "node tests/browser/recovery.mjs"
   },
   "dependencies": {
     "docx-preview": "0.3.7",

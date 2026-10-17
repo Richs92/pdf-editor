@@ -1,5 +1,8 @@
 import {authorize,moduleInfo} from './session.js';
 const status=document.querySelector('#status');
+function redirectRecovery(){const recovery=new URLSearchParams(location.hash.slice(1));if(recovery.get('type')==='recovery'||recovery.has('error_code')){location.replace('/recover.html'+location.hash);return true;}return false;}
+window.addEventListener('hashchange',redirectRecovery);
+if(!redirectRecovery()){
 try{
  const data=await authorize();document.querySelector('#greeting').textContent='Hola, '+data.user.display_name;
  const area=document.querySelector('#modules');
@@ -12,3 +15,5 @@ try{
  }
  status.textContent=data.modules.length?'':'Todavía no tienes secciones asignadas. Contacta al administrador.';
 }catch(error){status.textContent=error.message;status.classList.add('error');}
+
+}
