@@ -57,3 +57,16 @@ initialize();
 for (const eventName of ['gesturestart', 'gesturechange']) {
   document.addEventListener(eventName, event => event.preventDefault(), {passive:false});
 }
+
+const taxRegimeOption = document.querySelector('#taxRegimeOption');
+const taxRegimeInput = form.elements.taxRegime;
+const salaryRegime = 'Sueldos y Salarios e Ingresos Asimilados a Salarios';
+taxRegimeOption.addEventListener('change', () => {
+  if (!taxRegimeOption.value) return;
+  taxRegimeInput.value = taxRegimeOption.value === 'salary' ? salaryRegime : '';
+  taxRegimeInput.dispatchEvent(new Event('input', {bubbles:true}));
+  if (taxRegimeOption.value === 'custom') taxRegimeInput.focus();
+});
+taxRegimeInput.addEventListener('input', () => {
+  taxRegimeOption.value = taxRegimeInput.value === salaryRegime ? 'salary' : 'custom';
+});

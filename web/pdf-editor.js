@@ -14,7 +14,7 @@ export async function generatePDF(PDFLib, templateBytes, data, now = new Date())
   const postalCode = String(data.postalCode ?? '00000').trim();
   if (rfc && !/^[A-ZÑ&]{3,4}[0-9]{6}[A-Z0-9]{3}$/.test(rfc)) throw new Error('El RFC debe tener 12 o 13 caracteres con formato válido.');
   if (businessName.length > 120 || /[\r\n]/.test(businessName)) throw new Error('La razón social admite hasta 120 caracteres en una línea.');
-  if (!/^[0-9]{3}$/.test(taxRegime)) throw new Error('El régimen fiscal debe tener 3 dígitos.');
+  if (!taxRegime || taxRegime.length > 150 || /[\r\n]/.test(taxRegime)) throw new Error('Escribe un régimen fiscal de hasta 150 caracteres en una línea.');
   if (!/^[0-9]{5}$/.test(postalCode)) throw new Error('El CP fiscal debe tener 5 dígitos.');
   const doc = await PDFLib.PDFDocument.load(templateBytes);
   const normal = await doc.embedFont(PDFLib.StandardFonts.Helvetica);

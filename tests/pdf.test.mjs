@@ -13,7 +13,17 @@ test('genera un PDF de dos páginas con campos nuevos', async () => {
   await writeFile('artifacts/test-generated.pdf',bytes);
 });
 test('rechaza datos inválidos',async () => {
-  for(const patch of [{name:''},{name:'😀'},{rfc:'INVALIDO'},{businessName:'😀'},{taxRegime:'60'},{postalCode:'8001'},{service:'123'},{service:'１２３４５６７８９０１２'},{address:'a\nb\nc\nd\ne'}]) {
+  for(const patch of [{name:''},{name:'😀'},{rfc:'INVALIDO'},{businessName:'😀'},{taxRegime:''},{taxRegime:'😀'},{taxRegime:'a'.repeat(151)},{taxRegime:'a\nb'},{postalCode:'8001'},{service:'123'},{service:'１２３４５６７８９０１２'},{address:'a\nb\nc\nd\ne'}]) {
     await assert.rejects(generatePDF(PDFLib,template,{...values,...patch}));
+  }
+});
+
+test('acepta el régimen de salarios y nombres personalizados', async () => {
+  for (const taxRegime of ['Sueldos y Salarios e Ingresos Asimilados a Salarios', 'Régimen Simplificado de Confianza']) {
+    const bytes = await generatePDF(PDFLib,template,{...values,taxRegime},new Date('2026-11-16T18:00:00Z'));
+    const filename = taxRegime.startsWith('Sueldos') ? 'salary' : 'custom';
+    await mkdir('artifacts',{recursive:true});
+    await writeFile(`artifacts/regime-${filename}.pdf`,bytes);
+    assert.equal((await PDFLib.PDFDocument.load(bytes)).getPageCount(),2);
   }
 });
