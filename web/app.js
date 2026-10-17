@@ -1,3 +1,4 @@
+import {installPDFPrinting} from './print-document.js';
 import {authorize,recordEvent,guardDownload} from './session.js';
 await authorize('cfe');
 import {renderPreview} from './preview.js';
@@ -84,3 +85,5 @@ taxRegimeOption.addEventListener('change', () => {
 taxRegimeInput.addEventListener('input', () => {
   taxRegimeOption.value = taxRegimeInput.value === salaryRegime ? 'salary' : 'custom';
 });
+
+installPDFPrinting(document.querySelector('#download'),'cfe',document.querySelector('#status'));

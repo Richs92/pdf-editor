@@ -1,3 +1,4 @@
+import {installPDFPrinting} from '../print-document.js';
 import {authorize,recordEvent,guardDownload} from '../session.js';
 await authorize('water');
 import {generateWater,waterDates} from './generator.js';
@@ -20,3 +21,5 @@ for(const name of ['gesturestart','gesturechange'])document.addEventListener(nam
 try{const [pdf,defaults]=await Promise.all([fetch('./water/template.pdf'),fetch('./water/defaults.json')]);if(!pdf.ok||!defaults.ok)throw Error('No se pudo cargar la plantilla. Recarga la página.');template=new Uint8Array(await pdf.arrayBuffer());const data=await defaults.json();for(const [key,value]of Object.entries(data))$(key).value=value;await update();}catch(error){status.textContent=error.message;}
 
 guardDownload($('download'),'water');
+
+installPDFPrinting(document.querySelector('#download'),'water',document.querySelector('#status'));

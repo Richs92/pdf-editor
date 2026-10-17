@@ -144,7 +144,7 @@ export async function handler(event){
   requireReady(context);
   if(path==='/audit'&&method==='POST'){
    const data=bodyJSON(event);requireModule(context,data.module);
-   if(!['document_generated','document_downloaded','document_share_requested'].includes(data.action))throw new HTTPError(400,'Evento no válido.');
+   if(!['document_generated','document_downloaded','document_share_requested','document_print_requested'].includes(data.action))throw new HTTPError(400,'Evento no válido.');
    const details={};if(data.documentId){if(!/^[a-z-]{1,60}$/.test(data.documentId))throw new HTTPError(400,'Documento no válido.');details.documentId=data.documentId;}
    if(data.format){if(!['pdf','docx','google-docs'].includes(data.format))throw new HTTPError(400,'Formato no válido.');details.format=data.format;}
    await audit(context,data.action,data.module,null,details,'browser');return json(context,200,{ok:true});

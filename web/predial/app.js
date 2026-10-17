@@ -1,3 +1,4 @@
+import {installPDFPrinting} from '../print-document.js';
 import {authorize,recordEvent,guardDownload} from '../session.js';
 await authorize('predial');
 import {generatePredial} from './generator.js';
@@ -43,3 +44,5 @@ try{
 }catch(error){status.textContent=error.message;}
 
 guardDownload($('download'),'predial');
+
+installPDFPrinting(document.querySelector('#download'),'predial',document.querySelector('#status'));

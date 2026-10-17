@@ -2,6 +2,7 @@ import {authorize,recordEvent} from './session.js';
 await authorize('contracts');
 import {generateContractPDF} from './contract-pdf.js';
 import {cropINEPhoto} from './ine-crop.js';
+import {openPrintWindow} from './print-document.js';
 import {signaturePad} from './signature-pad.js';
 import {autoCropINE} from './ine-detect.js';
 import {formatPagareInput,pagareAmount} from './pagare-amount.js';
@@ -223,6 +224,15 @@ function download(blob,filename){const url=URL.createObjectURL(blob);const link=
 async function wordDownload(format='docx'){if(!generated)return;const ready=generated;await logGeneration(ready);await recordEvent('contracts','document_downloaded',{documentId:ready.id,format});if(generated!==ready)throw Error('El documento cambió. Vuelve a prepararlo.');download(new Blob([generated.bytes],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}),generated.id+'-llenado.docx');}
 $('#word-download').addEventListener('click',()=>wordDownload().catch(error=>status.textContent=error.message));
 $('#google-download').addEventListener('click',async()=>{try{await wordDownload('google-docs');status.textContent='Word descargado. Súbelo a Google Drive y selecciona “Abrir con → Documentos de Google”. Los anexos están incluidos.';}catch(error){status.textContent=error.message;}});
+$('#print-document').addEventListener('click',async()=>{
+ if(!generated||busy)return;let view;const ready=generated;lock(true);
+ try{
+  view=openPrintWindow();const pdf=await pdfForReady(ready);if(generated!==ready)throw Error('El documento cambió. Espera la vista previa actualizada y vuelve a imprimir.');
+  await logGeneration(ready);await recordEvent('contracts','document_print_requested',{documentId:ready.id,format:'pdf'});
+  if(generated!==ready)throw Error('El documento cambió. Vuelve a imprimir la versión actualizada.');
+  await view.show(pdf,ready.id+'-llenado.pdf');status.textContent='Impresión solicitada. Selecciona la impresora en el menú del dispositivo.';
+ }catch(error){view?.fail(error);status.textContent=error.message;}finally{lock(false);if(!generated)schedulePreview(0);}
+});
 $('#pdf-download').addEventListener('click',async()=>{
  if(!generated||busy)return;const prepared=generated,version=sourceVersion;lock(true);status.textContent='Generando PDF. Puede tardar unos segundos…';
  try{
