@@ -1,6 +1,8 @@
 import {authorize,recordEvent} from './session.js';
 await authorize('contracts');
 import {generateContractPDF} from './contract-pdf.js';
+import {recognizeINE} from './ine-ocr.js';
+import {extractINEFields,ineTargetFields} from './ine-fields.js';
 import {generateWord} from './word-generator.js';
 const $=selector=>document.querySelector(selector);
 const form=$('#contract-form'), status=$('#form-status');
@@ -54,19 +56,58 @@ async function readPhoto(file){
 function buildPhotoCards(){
  const area=$('#photos');area.replaceChildren();
  for(const slot of photoSlots()){
-  const key=photoKey(slot.key),card=document.createElement('div');card.className='photo-card';const title=document.createElement('h3');title.textContent=slot.label;card.append(title);
+  const documentId=current.id,key=photoKey(slot.key),card=document.createElement('div');card.className='photo-card';const title=document.createElement('h3');title.textContent=slot.label;card.append(title);
   const controls=document.createElement('div');controls.className='photo-buttons';
   for(const camera of [true,false]){
    const label=document.createElement('label');label.textContent=camera?'Tomar foto':'Subir imagen';const input=document.createElement('input');input.type='file';input.accept='image/*';input.hidden=true;input.setAttribute('aria-label',(camera?'Tomar foto: ':'Subir imagen: ')+slot.label);if(camera)input.capture='environment';label.append(input);
    input.addEventListener('change',async()=>{
     if(!input.files[0])return;label.style.opacity='.5';status.textContent='Procesando imagen…';
-    try{const photo=await readPhoto(input.files[0]);const previous=photoData.get(key);if(previous)URL.revokeObjectURL(previous.preview);photoData.set(key,photo);markDirty();buildPhotoCards();status.textContent='INE añadida. Prepara el documento para incluir el anexo.';}catch(error){status.textContent=error.message;}finally{label.style.opacity='1';input.value='';}
+    try{const photo=await readPhoto(input.files[0]);const previous=photoData.get(key);if(previous){previous.ocr?.controller?.abort();URL.revokeObjectURL(previous.preview);}photoData.set(key,photo);if(current.id===documentId){markDirty();buildPhotoCards();status.textContent='INE añadida. Puedes revisar sus datos y preparar el documento con el anexo.';}if(slot.key.endsWith('-front'))void scanPhoto(documentId,slot,photo);}catch(error){status.textContent=error.message;}finally{label.style.opacity='1';input.value='';}
    });controls.append(label);
   }
   const photo=photoData.get(key);
-  if(photo){const remove=document.createElement('button');remove.type='button';remove.textContent='Quitar foto';remove.addEventListener('click',()=>{URL.revokeObjectURL(photo.preview);photoData.delete(key);markDirty();buildPhotoCards();});controls.append(remove);}
-  card.append(controls);if(photo){const img=document.createElement('img');img.src=photo.preview;img.alt=slot.label;card.append(img);}area.append(card);
+  if(photo){const remove=document.createElement('button');remove.type='button';remove.textContent='Quitar foto';remove.addEventListener('click',()=>{photo.ocr?.controller?.abort();URL.revokeObjectURL(photo.preview);photoData.delete(key);markDirty();buildPhotoCards();});controls.append(remove);}
+  card.append(controls);if(photo){const img=document.createElement('img');img.src=photo.preview;img.alt=slot.label;card.append(img);buildOCRReview(card,documentId,slot,photo);}area.append(card);
  }
+}
+async function scanPhoto(documentId,slot,photo){
+ if(photo.ocr?.state==='reading')return;
+ const controller=new AbortController();photo.ocr={state:'reading',message:'Lectura en espera…',controller};
+ const visible=()=>current.id===documentId&&photoData.get(documentId+'-'+slot.key)===photo;
+ if(visible())buildPhotoCards();
+ try{
+  const result=await recognizeINE(photo.preview,{signal:controller.signal,onProgress:message=>{photo.ocr.message=message;if(visible()){const node=document.querySelector(`[data-ocr-status="${slot.key}"]`);if(node)node.textContent=message;}}});
+  if(controller.signal.aborted)return;
+  const values=extractINEFields(result.text);photo.ocr={state:'ready',values,selected:Object.fromEntries(Object.entries(values).map(([key,value])=>[key,Boolean(value)])),confidence:result.confidence};
+ }catch(error){if(controller.signal.aborted)return;photo.ocr={state:'error',message:error.message||'No se pudo leer la INE. Puedes volver a intentar o llenar el formulario manualmente.'};}
+ if(visible())buildPhotoCards();
+}
+function buildOCRReview(card,documentId,slot,photo){
+ const ocr=photo.ocr,area=document.createElement('div');area.className='ocr-review';area.dataset.ocrSlot=slot.key;card.append(area);
+ const message=document.createElement('p');message.className='hint';message.setAttribute('role','status');message.dataset.ocrStatus=slot.key;area.append(message);
+ const read=document.createElement('button');read.type='button';read.className='secondary';read.textContent=ocr?'Volver a leer INE':'Leer datos de INE';read.disabled=ocr?.state==='reading';read.addEventListener('click',()=>scanPhoto(documentId,slot,photo));area.append(read);
+ if(!ocr){message.textContent='Puedes leer esta cara para detectar los datos de identificación.';return;}
+ if(ocr.state==='reading'){message.textContent=ocr.message;return;}
+ if(ocr.state==='error'){message.textContent='No se pudo completar la lectura. La foto sigue adjunta; puedes llenar el formulario manualmente o volver a intentar.';return;}
+ message.textContent=Object.values(ocr.values).some(Boolean)?'Revisa y corrige los datos antes de aplicarlos. '+(ocr.confidence<65?'La lectura tiene baja confianza; compárala con la foto.':''):'No se detectaron datos con claridad. Puedes escribirlos aquí o probar otra foto.';
+ const targets=ineTargetFields(documentId,slot.key.split('-')[0]);
+ for(const [key,label]of Object.entries({name:'Nombre detectado',address:'Domicilio detectado',identification:'Identificación detectada'})){
+  if(!targets[key])continue;
+  const field=document.createElement('div');field.className='field';const id='ocr-'+slot.key+'-'+key;
+  const title=document.createElement('label');title.htmlFor=id;title.textContent=label;
+  const input=document.createElement(key==='address'?'textarea':'input');input.id=id;input.value=ocr.values[key];input.maxLength=4000;input.dataset.ocrField=key;
+  input.addEventListener('input',()=>{ocr.values[key]=input.value;});
+  const selectLabel=document.createElement('label');selectLabel.className='ocr-check';const check=document.createElement('input');check.type='checkbox';check.checked=ocr.selected[key];check.setAttribute('aria-label','Usar '+label.toLowerCase());check.addEventListener('change',()=>ocr.selected[key]=check.checked);selectLabel.append(check,document.createTextNode('Usar este dato'));
+  field.append(title,input,selectLabel);area.append(field);
+ }
+ const apply=document.createElement('button');apply.type='button';apply.className='primary';apply.textContent='Aplicar datos revisados';apply.addEventListener('click',()=>{
+  if(current.id!==documentId||photoData.get(documentId+'-'+slot.key)!==photo)return;
+  const updates=Object.entries(targets).filter(([key])=>ocr.selected[key]&&ocr.values[key].trim()).map(([key,target])=>({input:form.elements[target],value:ocr.values[key].trim().replace(/\r?\n/g,', ')})).filter(item=>item.input);
+  if(!updates.length){message.textContent='Selecciona al menos un dato con contenido para aplicar.';return;}
+  if(updates.some(({input,value})=>input.value.trim()&&input.value.trim()!==value)&&!confirm('Los datos seleccionados reemplazarán información que ya está escrita en el formulario. ¿Continuar?'))return;
+  for(const {input,value}of updates)input.value=value;
+  saveDraft();markDirty();message.textContent='Datos aplicados al formulario. Puedes seguir editándolos.';status.textContent='Datos de INE aplicados. Prepara el documento para revisar el resultado.';
+ });area.append(apply);
 }
 function lock(value){busy=value;document.querySelectorAll('.actions button,.tab,.template-choice').forEach(button=>button.disabled=value);}
 function fitPreview(){
@@ -119,3 +160,5 @@ $('#pdf-download').addEventListener('click',async()=>{
 for(const button of document.querySelectorAll('.tab'))button.addEventListener('click',()=>setGroup(button.dataset.group));
 for(const event of ['gesturestart','gesturechange'])document.addEventListener(event,e=>e.preventDefault(),{passive:false});
 try{const response=await fetch('./contracts-catalog.json');if(!response.ok)throw Error('No se pudo cargar el catálogo.');catalog=await response.json();setGroup('Ratificados');$('#workspace').hidden=false;$('#loading').hidden=true;}catch(error){$('#loading').textContent=error.message;}
+
+window.addEventListener('pagehide',()=>{for(const photo of photoData.values())photo.ocr?.controller?.abort();});
