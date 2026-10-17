@@ -8,7 +8,7 @@ try{
  const admin=await browser.newPage({viewport:{width:1360,height:1000}});
  const errors=[];admin.on('pageerror',error=>errors.push(error.message));
  await browserLogin(admin,app.url);
- assert.equal(await admin.locator('#modules a.module-card').count(),5);
+ assert.equal(await admin.locator('#modules a.module-card').count(),4);
  await mkdir('artifacts/admin',{recursive:true});await admin.screenshot({path:'artifacts/admin/home.png',fullPage:true});
  await admin.getByRole('link',{name:'Admin',exact:true}).click();
  await admin.locator('#admin-content').waitFor({state:'visible'});
@@ -21,7 +21,7 @@ try{
  const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});const staff=await context.newPage();staff.on('pageerror',error=>errors.push(error.message));
  await staff.goto(app.url+'/login.html');await staff.getByLabel('Usuario',{exact:true}).fill('ana.operadora');await staff.getByLabel('Contraseña',{exact:true}).fill(password);await staff.getByRole('button',{name:'Iniciar sesión',exact:true}).click();
  await staff.waitForURL(app.url+'/');await staff.locator('#modules .module-card').first().waitFor();
- assert.equal(await staff.locator('#modules a.module-card').count(),1);assert.equal(await staff.locator('#modules .locked').count(),4);assert.equal(await staff.getByRole('link',{name:'Admin',exact:true}).count(),0);
+ assert.equal(await staff.locator('#modules a.module-card').count(),1);assert.equal(await staff.locator('#modules .locked').count(),3);assert.equal(await staff.getByRole('link',{name:'Admin',exact:true}).count(),0);
  const blocked=await staff.goto(app.url+'/cfe.html');assert.equal(blocked.status(),403);
  await staff.goto(app.url+'/water.html');await staff.locator('#status').filter({hasText:'Recibo listo.'}).waitFor();
  await staff.getByLabel('Nombre',{exact:true}).fill('EJEMPLO PRIVADO QUE NO SE DEBE REGISTRAR');await staff.getByRole('button',{name:'Actualizar vista previa',exact:true}).click();await staff.locator('#status').filter({hasText:'Recibo listo.'}).waitFor();

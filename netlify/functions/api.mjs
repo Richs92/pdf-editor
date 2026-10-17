@@ -22,7 +22,6 @@ async function supabase(path,{method='GET',body,token,headers={}}={}){
   let message='No se pudo completar la operación.',status=response.status>=500?503:response.status;
   if(code==='weak_password'||code==='validation_failed'&&path.startsWith('/auth/v1/admin/users/'))message='Supabase rechazó la contraseña. En Netlify, cambia ADMIN_INITIAL_PASSWORD por una de al menos 12 caracteres con mayúsculas, minúsculas, números y símbolos, y publica de nuevo.';
   else if(code==='email_not_confirmed')message='La cuenta de administrador sigue pendiente de confirmación en Supabase.';
-  else if(code==='23514'&&(body?.p_module==='bank'||body?.p_modules?.includes('bank'))){message='Falta activar BanBajío en Supabase. Ejecuta el archivo supabase/add-bank.sql en SQL Editor; conserva usuarios y registros existentes.';status=503;}
   else if(code==='PGRST125'){message='La ruta de conexión a Supabase no es válida. Revisa SUPABASE_URL en Netlify: usa la Project URL https://tu-proyecto.supabase.co, sin /rest/v1 ni rutas adicionales.';status=503;}
   else if(code==='PGRST205'||code==='42P01'){message='Faltan las tablas de acceso en el proyecto de Supabase conectado a Netlify. Revisa SUPABASE_URL y ejecuta supabase/setup.sql en ese proyecto.';status=503;}
   else if(code==='PGRST202'||code==='42883'){message='Faltan funciones de acceso en Supabase o están desactualizadas. Ejecuta de nuevo supabase/setup.sql en el proyecto conectado a Netlify.';status=503;}
@@ -31,7 +30,7 @@ async function supabase(path,{method='GET',body,token,headers={}}={}){
   const safeCode=typeof code==='string'&&/^[a-zA-Z0-9_]{1,50}$/.test(code)?code:'SIN_CODIGO';
   if(message==='No se pudo completar la operación.')message='Supabase rechazó la operación de '+operation+'.';
   message+=' [HTTP '+response.status+' · '+safeCode+' · '+operation+']';
-  const error=new HTTPError(status,message,code==='23514'&&(body?.p_module==='bank'||body?.p_modules?.includes('bank'))?'BANK_SETUP_REQUIRED':undefined);error.upstream=result;throw error;}
+  const error=new HTTPError(status,message);error.upstream=result;throw error;}
  return result;
 }
 const rpc=(name,body)=>supabase('/rest/v1/rpc/'+name,{method:'POST',body});
@@ -103,7 +102,7 @@ async function content(event,context){
  }
  const root=resolve(process.env.APP_PRIVATE_ASSETS_DIR||'netlify/private-assets');const file=resolve(root,path);if(!file.startsWith(root+'/'))throw new HTTPError(404,'Archivo no disponible.');
  let bytes;try{bytes=await readFile(file);}catch{throw new HTTPError(404,'Archivo no disponible.');}
- if(path.endsWith('.html')){try{await audit(context,'module_opened',module);}catch(error){if(error.code==='BANK_SETUP_REQUIRED')return{statusCode:302,headers:{Location:'/activar-banbajio.html','Cache-Control':'no-store'},body:''};throw error;}}
+ if(path.endsWith('.html'))await audit(context,'module_opened',module);
  const mime={'.html':'text/html; charset=utf-8','.json':'application/json','.pdf':'application/pdf','.docx':'application/vnd.openxmlformats-officedocument.wordprocessingml.document','.js':'text/javascript'}[extname(path)]||'application/octet-stream';
  return{statusCode:200,headers:{'Content-Type':mime,'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'},...(context.cookies.length?{multiValueHeaders:{'Set-Cookie':context.cookies}}:{}),isBase64Encoded:true,body:bytes.toString('base64')};
 }
