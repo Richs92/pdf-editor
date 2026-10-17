@@ -61,11 +61,11 @@ function fillXML(xml, values) {
   return new XMLSerializer().serializeToString(doc);
 }
 function paragraph(text, bold=false) {
-  return `<w:p><w:r>${bold?'<w:rPr><w:b/></w:rPr>':''}<w:t xml:space="preserve">${escapeXML(text)}</w:t></w:r></w:p>`;
+  return `<w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r>${bold?'<w:rPr><w:b/></w:rPr>':''}<w:t xml:space="preserve">${escapeXML(text)}</w:t></w:r></w:p>`;
 }
 function photoXML(id, relationship, width, height) {
   const cx = Math.round(width), cy = Math.round(height);
-  return `<w:p><w:r><w:drawing><wp:inline xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${id}" name="INE ${id}"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${id}" name="INE ${id}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip xmlns:r="${R}" r:embed="${relationship}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>`;
+  return `<w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:drawing><wp:inline xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${id}" name="INE ${id}"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${id}" name="INE ${id}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip xmlns:r="${R}" r:embed="${relationship}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>`;
 }
 export function groupINEPhotos(photos,documentId){
   return (documentId==='recibo-apartado'?['buyer','seller']:['seller','buyer']).flatMap(person=>{
@@ -104,7 +104,7 @@ export async function generateWord(templateBytes, contract, data, photos=[]) {
         contents+=paragraph(photo.label,true)+photoXML(5000+index,relation,photo.width*scale,photo.height*scale);index++;
       }
       // A single unsplittable row keeps both faces together in Word and PDF.
-      annex+='<w:p><w:r><w:br w:type="page"/></w:r></w:p>'+`<w:tbl><w:tblPr><w:tblCaption w:val="TerminavitINE"/><w:tblBorders><w:top w:val="nil"/><w:left w:val="nil"/><w:bottom w:val="nil"/><w:right w:val="nil"/><w:insideH w:val="nil"/><w:insideV w:val="nil"/></w:tblBorders></w:tblPr><w:tblGrid><w:gridCol w:w="9000"/></w:tblGrid><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc>${contents}</w:tc></w:tr></w:tbl>`;
+      annex+='<w:p><w:r><w:br w:type="page"/></w:r></w:p>'+`<w:tbl><w:tblPr><w:tblCaption w:val="TerminavitINE"/><w:jc w:val="center"/><w:tblW w:w="5000" w:type="pct"/><w:tblBorders><w:top w:val="nil"/><w:left w:val="nil"/><w:bottom w:val="nil"/><w:right w:val="nil"/><w:insideH w:val="nil"/><w:insideV w:val="nil"/></w:tblBorders></w:tblPr><w:tblGrid><w:gridCol w:w="9000"/></w:tblGrid><w:tr><w:trPr><w:cantSplit/></w:trPr><w:tc>${contents}</w:tc></w:tr></w:tbl>`;
     }
     const fragment = parseXML(`<w:body xmlns:w="${W}" xmlns:r="${R}">${annex}</w:body>`);
     for (const node of [...fragment.documentElement.children]) body.insertBefore(doc.importNode(node,true),sectPr||null);
@@ -112,5 +112,23 @@ export async function generateWord(templateBytes, contract, data, photos=[]) {
     zip.file(relPath,new XMLSerializer().serializeToString(rels));
     zip.file('[Content_Types].xml',new XMLSerializer().serializeToString(types));
   }
+  addPageNumbers(zip);
   return zip.generate({type:'uint8array',compression:'DEFLATE'});
+}
+
+function addPageNumbers(zip){
+ const doc=parseXML(zip.file('word/document.xml').asText()),rels=parseXML(zip.file('word/_rels/document.xml.rels').asText()),types=parseXML(zip.file('[Content_Types].xml').asText());
+ const id='rIdTerminavitPageFooter',target='terminavit-page-footer.xml';
+ const rel=rels.createElementNS(rels.documentElement.namespaceURI,'Relationship');rel.setAttribute('Id',id);rel.setAttribute('Type',R+'/footer');rel.setAttribute('Target',target);rels.documentElement.append(rel);
+ for(const section of doc.getElementsByTagNameNS(W,'sectPr')){
+  for(const ref of [...section.children].filter(node=>node.localName==='footerReference'))ref.remove();
+  for(const type of ['default','first','even']){const ref=doc.createElementNS(W,'w:footerReference');ref.setAttributeNS(W,'w:type',type);ref.setAttributeNS(R,'r:id',id);const anchor=[...section.children].find(node=>!['headerReference','footerReference'].includes(node.localName));section.insertBefore(ref,anchor||null);}
+  // Continuous numbering includes the identification annexes.
+  for(const numbering of section.getElementsByTagNameNS(W,'pgNumType'))numbering.removeAttributeNS(W,'start');
+ }
+ const override=types.createElementNS(types.documentElement.namespaceURI,'Override');override.setAttribute('PartName','/word/'+target);override.setAttribute('ContentType','application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml');types.documentElement.append(override);
+ const field=instruction=>`<w:fldSimple w:instr="${instruction}" w:dirty="true"><w:r><w:t>1</w:t></w:r></w:fldSimple>`;
+ zip.file('word/'+target,`<w:ftr xmlns:w="${W}"><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="18"/></w:rPr><w:t xml:space="preserve">Página </w:t></w:r>${field('PAGE')}<w:r><w:t xml:space="preserve"> de </w:t></w:r>${field('NUMPAGES')}</w:p></w:ftr>`);
+ if(zip.file('word/settings.xml')){const settings=parseXML(zip.file('word/settings.xml').asText());let update=settings.getElementsByTagNameNS(W,'updateFields')[0];if(!update){update=settings.createElementNS(W,'w:updateFields');settings.documentElement.append(update);}update.setAttributeNS(W,'w:val','true');zip.file('word/settings.xml',new XMLSerializer().serializeToString(settings));}
+ for(const [path,xml]of [['word/document.xml',doc],['word/_rels/document.xml.rels',rels],['[Content_Types].xml',types]])zip.file(path,new XMLSerializer().serializeToString(xml));
 }

@@ -53,7 +53,7 @@ export async function generateContractPDF(bytes){
     const ext=run.getElementsByTagNameNS(WP,'extent')[0];
     const iw=Number(ext?.getAttribute('cx')||5000000)/12700,ih=Number(ext?.getAttribute('cy')||3000000)/12700;
     const mime=/\.png$/i.test(path)?'image/png':'image/jpeg';
-    images.push({image:`data:${mime};base64,${btoa(image.asBinary())}`,fit:[Math.min(iw,contentWidth),Math.min(ih,height-margins[1]-margins[3]-70)],margin:[0,8,0,10]});
+    images.push({alignment:val(child(props,'jc'))==='center'?'center':'left',image:`data:${mime};base64,${btoa(image.asBinary())}`,fit:[Math.min(iw,contentWidth),Math.min(ih,height-margins[1]-margins[3]-70)],margin:[0,8,0,10]});
    }
   }
   const result=[];
@@ -87,13 +87,13 @@ export async function generateContractPDF(bytes){
   const grid=child(tableNode,'tblGrid');let sizes=grid?children(grid,'gridCol').map(col=>Number(val(col,'w')||1)):[];
   if(sizes.length!==columns)sizes=Array(columns).fill(1);const total=sizes.reduce((a,b)=>a+b,0);
   const item={table:{headerRows:sourceRows.findIndex(tr=>!enabled(child(child(tr,'trPr'),'tblHeader'))) < 0 ? sourceRows.length : sourceRows.findIndex(tr=>!enabled(child(child(tr,'trPr'),'tblHeader'))),widths:sizes.map(n=>(contentWidth-columns*10)*n/total),body:rows,dontBreakRows:false},layout:{hLineWidth:()=>.5,vLineWidth:()=>.5,hLineColor:()=> '#9ca9af',vLineColor:()=> '#9ca9af',paddingLeft:()=>4,paddingRight:()=>4,paddingTop:()=>4,paddingBottom:()=>4},margin:[0,4,0,8]};
-  if(val(child(child(tableNode,'tblPr'),'tblCaption'))==='TerminavitINE'){item.layout='noBorders';item.table.dontBreakRows=true;}
+  if(val(child(child(tableNode,'tblPr'),'tblCaption'))==='TerminavitINE'){item.layout={hLineWidth:()=>0,vLineWidth:()=>0,paddingLeft:()=>0,paddingRight:()=>0,paddingTop:()=>4,paddingBottom:()=>4};item.table.widths=[contentWidth];item.table.dontBreakRows=true;}
   if(pendingBreak){item.pageBreak='before';pendingBreak=false;}return item;
  }
  const content=[];
  for(const node of body.children){if(node.namespaceURI!==W)continue;if(node.localName==='p')content.push(...paragraph(node));else if(node.localName==='tbl')content.push(table(node));}
  if(content[0]?.pageBreak)delete content[0].pageBreak;
- const definition={pageSize:{width,height},pageMargins:margins,defaultStyle:{font:'ContractSerif',fontSize:11,...defaults},content,info:{title:'Documento TERMINAVIT',creator:'Documento · TERMINAVIT'}};
+ const definition={pageSize:{width,height},pageMargins:margins,defaultStyle:{font:'ContractSerif',fontSize:11,...defaults},content,footer:(page,total)=>({text:'Página '+page+' de '+total,alignment:'center',font:'ContractSans',fontSize:9,margin:[0,12,0,0]}),info:{title:'Documento TERMINAVIT',creator:'Documento · TERMINAVIT'}};
  const fonts={ContractSerif:fontURLs('Serif'),ContractSans:fontURLs('Sans')};
  return new Promise((resolve,reject)=>{
   try{window.pdfMake.createPdf(definition,undefined,fonts).getBlob(resolve);}catch(error){reject(error);}

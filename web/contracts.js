@@ -113,6 +113,8 @@ async function renderDocument(bytes,isCurrent){
  await Promise.all([...source.querySelectorAll('img')].map(image=>image.decode().catch(()=>{})));
  if(document.fonts?.ready)await document.fonts.ready;
  if(!isCurrent())return;
+ const sheets=[...source.querySelectorAll('section.docx')];
+ sheets.forEach((sheet,index)=>{for(const footer of sheet.querySelectorAll('footer'))if(footer.textContent.includes('Página')){footer.textContent='Página '+(index+1)+' de '+sheets.length;footer.style.textAlign='center';}});
  const preview=$('#document-preview'),scrollTop=preview.scrollTop;preview.replaceChildren();
  // Preserve generated styles without exposing source markup as application code.
  source.querySelectorAll('style').forEach(style=>preview.append(style.cloneNode(true)));

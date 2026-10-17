@@ -1,6 +1,7 @@
 import {chromium} from 'playwright';
 import {mkdir,readFile} from 'node:fs/promises';
 import assert from 'node:assert/strict';
+import PizZip from 'pizzip';
 import {startTestApp,browserLogin} from '../helpers/test-app.mjs';
 const app=await startTestApp();
 const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',args:['--no-sandbox']});
@@ -50,6 +51,10 @@ const sample={seller:'ANA PÉREZ GARCÍA',buyer:'LUIS LÓPEZ RUIZ',sellerId:'INE
   assert.equal(await page.evaluate(()=>visualViewport.scale),before);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   let download=page.waitForEvent('download');await page.locator('#word-download').click();await(await download).saveAs('artifacts/contracts/'+item.id+'.docx');
+  const word=new PizZip(await readFile('artifacts/contracts/'+item.id+'.docx'));
+  const footer=word.file('word/terminavit-page-footer.xml').asText();assert.ok(footer.includes('PAGE')&&footer.includes('NUMPAGES'));
+  const documentXML=word.file('word/document.xml').asText();assert.ok(documentXML.includes('rIdTerminavitPageFooter'));
+  if(index===0||index===1){const xml=await page.evaluate(text=>{const doc=new DOMParser().parseFromString(text,'application/xml'),ns='http://schemas.openxmlformats.org/wordprocessingml/2006/main';return [...doc.getElementsByTagNameNS(ns,'drawing')].every(drawing=>drawing.parentElement.parentElement.querySelector('jc')?.getAttributeNS(ns,'val')==='center');},documentXML);assert.equal(xml,true);}
   download=page.waitForEvent('download',{timeout:90000});await page.locator('#pdf-download').click();await(await download).saveAs('artifacts/contracts/'+item.id+'.pdf');
   if(index===0){
    download=page.waitForEvent('download');await page.locator('#google-download').click();assert.ok((await download).suggestedFilename().endsWith('.docx'));
