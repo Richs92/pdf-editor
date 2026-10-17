@@ -1,0 +1,9 @@
+<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Activar BanBajío</title><link rel="stylesheet" href="/access.css"><body><header><a class="brand" href="/">documento.</a></header><main class="narrow"><section class="panel"><h1>Activar BanBajío</h1><p>El propietario del proyecto debe realizar este paso una sola vez para habilitar los permisos y el registro de actividad de la nueva sección. Conserva todos los usuarios y registros existentes.</p><ol><li>Abre tu proyecto en Supabase.</li><li>Entra a <strong>SQL Editor → New query</strong>.</li><li>Copia el código de abajo, pégalo en el editor y pulsa <strong>Run</strong>.</li><li>Regresa al Home y abre BanBajío. En Admin podrás asignar este permiso a tu equipo.</li></ol><pre style="white-space:pre-wrap;overflow-wrap:anywhere;background:#f3f5f7;padding:14px;font-size:12px">-- Run in the SQL Editor of the Supabase project connected to Netlify.
+-- Keeps all users, permissions, and activity records.
+begin;
+alter table public.app_permissions drop constraint if exists app_permissions_module_check;
+alter table public.app_permissions add constraint app_permissions_module_check check (module in ('contracts','cfe','water','predial','bank'));
+alter table public.app_audit drop constraint if exists app_audit_module_check;
+alter table public.app_audit add constraint app_audit_module_check check (module in ('contracts','cfe','water','predial','bank'));
+commit;
+</pre><a href="/" class="primary">Volver al Home</a></section></main></body></html>

@@ -12,7 +12,7 @@ create table if not exists public.app_users (
 );
 create table if not exists public.app_permissions (
   user_id uuid not null references public.app_users(id) on delete cascade,
-  module text not null check (module in ('contracts','cfe','water','predial')),
+  module text not null check (module in ('contracts','cfe','water','predial','bank')),
   primary key(user_id,module)
 );
 create table if not exists public.app_audit (
@@ -21,7 +21,7 @@ create table if not exists public.app_audit (
   actor_id uuid,
   actor_email text,
   action text not null,
-  module text check (module in ('contracts','cfe','water','predial')),
+  module text check (module in ('contracts','cfe','water','predial','bank')),
   target_id uuid,
   source text not null check(source in ('server','browser')),
   details jsonb not null default '{}'::jsonb

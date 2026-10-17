@@ -17,7 +17,9 @@
     "test:access": "node --test tests/access.test.mjs tests/schema.test.mjs",
     "test:recovery": "node tests/browser/recovery.mjs",
     "test:ine": "node tests/browser/ine.mjs",
-    "test:contract-preview": "node tests/browser/contract-preview.mjs"
+    "test:contract-preview": "node tests/browser/contract-preview.mjs",
+    "test:bank": "node tests/browser/bank.mjs",
+    "prepare:bank": "python3 scripts/prepare-bank.py"
   },
   "dependencies": {
     "@pdf-lib/fontkit": "1.1.1",

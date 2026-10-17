@@ -93,3 +93,27 @@
   to = "/.netlify/functions/api/content?path=templates/:splat"
   status = 200
   force = true
+
+[[redirects]]
+  from = "/bank.html"
+  to = "/.netlify/functions/api/content?path=bank.html"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/bank/template.pdf"
+  to = "/.netlify/functions/api/content?path=bank/template.pdf"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/bank/defaults.json"
+  to = "/.netlify/functions/api/content?path=bank/defaults.json"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/bank/fields.js"
+  to = "/.netlify/functions/api/content?path=bank/fields.js"
+  status = 200
+  force = true

@@ -25,7 +25,7 @@ await cp('node_modules/@tesseract.js-data/spa/4.0.0_best_int/spa.traineddata.gz'
 // Personal templates and module entry pages are served only after server auth.
 await rm('netlify/private-assets',{recursive:true,force:true});
 await mkdir('netlify/private-assets',{recursive:true});
-const privateFiles=['contracts.html','contracts-catalog.json','templates','predial.html','predial/template.pdf','predial/defaults.json','predial/fields.js','water.html','water/template.pdf','water/defaults.json','template-clean.pdf','defaults.json'];
+const privateFiles=['bank.html','bank/template.pdf','bank/defaults.json','bank/fields.js','contracts.html','contracts-catalog.json','templates','predial.html','predial/template.pdf','predial/defaults.json','predial/fields.js','water.html','water/template.pdf','water/defaults.json','template-clean.pdf','defaults.json'];
 for(const path of privateFiles){
   await mkdir(dirname('netlify/private-assets/'+path),{recursive:true});
   await cp('dist/'+path,'netlify/private-assets/'+path,{recursive:true});
