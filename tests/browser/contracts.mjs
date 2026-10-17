@@ -36,6 +36,7 @@ const sample={seller:'ANA PÉREZ GARCÍA',buyer:'LUIS LÓPEZ RUIZ',sellerId:'INE
   await page.locator('#exports').waitFor({state:'visible',timeout:60000});
   assert.ok((await page.locator('#document-preview').innerText()).includes(item.id==='pagare'?sample.subscriber:sample.seller));
   assert.ok(!(await page.locator('#document-preview').innerText()).includes('{seller}'));
+  assert.ok(!(await page.locator('#document-preview').innerText()).includes('DATOS A COMPLETAR ANTES DE FIRMAR'));
   assert.ok(await page.locator('#document-preview section.docx').count()>0);
   const before=await page.evaluate(()=>visualViewport.scale);
   const input=page.locator('#fields input').first();await input.focus();

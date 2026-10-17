@@ -64,6 +64,19 @@ for source in sorted(Path('data/contracts').glob('*.docx')):
         for prefix,uri in re.findall(r'xmlns:([\w]+)="([^"]+)"',xml):
             if not re.fullmatch(r'ns\d+',prefix):ET.register_namespace(prefix,uri)
         root=ET.fromstring(xml)
+        if key!='pagare':
+            # The final checklist is internal guidance, not part of the client contract.
+            body=root.find('w:body',NS)
+            children=list(body)
+            guide=next((i for i,node in enumerate(children) if 'DATOS A COMPLETAR ANTES DE FIRMAR' in ''.join(n.text or '' for n in node.findall('.//w:t',NS))),None)
+            if guide is None:raise ValueError(f'{source.name}: no se encontró la guía interna esperada')
+            start=guide
+            while start>0:
+                previous=children[start-1]
+                if previous.tag!='{'+W+'}p' or ''.join(previous.itertext()).strip() or previous.find('.//w:drawing',NS) is not None or previous.find('.//w:sectPr',NS) is not None:break
+                start-=1
+            for node in children[start:]:
+                if node.tag!='{'+W+'}sectPr':body.remove(node)
         paragraphs=root.findall('.//w:p',NS);used=[];signatures=[0]
         texts=[''.join(n.text or '' for n in p.findall('.//w:t',NS)) for p in paragraphs]
         for i,(p,text) in enumerate(zip(paragraphs,texts)):

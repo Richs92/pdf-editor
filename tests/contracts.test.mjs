@@ -1,3 +1,4 @@
+import PizZip from 'pizzip';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
@@ -25,4 +26,18 @@ test('anexos: una hoja por persona, frente antes del reverso aunque se suban en 
  assert.deepEqual(groups.map(group=>group.title),['Vendedor','Comprador']);
  for(const group of groups)assert.deepEqual(group.photos.map(photo=>photo.face),['front','back']);
  assert.equal(groupINEPhotos([{person:'seller',face:'back'}],'pagare')[0].title,'Suscriptor');
+});
+
+test('contratos de cliente: sin guía interna, con cláusulas, firmas y originales conservados',async()=>{
+ for(const item of catalog.filter(item=>item.id!=='pagare')){
+  const original=new PizZip(await readFile('data/contracts/'+item.id+'.docx')).file('word/document.xml').asText();
+  const prepared=new PizZip(await readFile('web/'+item.template)).file('word/document.xml').asText();
+  assert.ok(original.includes('DATOS A COMPLETAR ANTES DE FIRMAR'),item.id);
+  assert.ok(!prepared.includes('DATOS A COMPLETAR ANTES DE FIRMAR'),item.id);
+  assert.ok(!prepared.includes('Los campos resaltados en amarillo'),item.id);
+  assert.ok(prepared.includes('{seller}')&&prepared.includes('{buyer}'),item.id);
+  assert.ok(prepared.includes('EL PROMITENTE VENDEDOR'),item.id);
+  if(item.group==='Ratificados')assert.ok(prepared.includes('{notary}'),item.id);
+  assert.ok(!item.fields.some(field=>['refundDays','thirdPartyDays'].includes(field.key)),item.id);
+ }
 });

@@ -376,20 +376,6 @@
         "group": "Firma y notaría",
         "type": "text",
         "default": ""
-      },
-      {
-        "key": "refundDays",
-        "label": "Plazo de restitución del depósito (tabla de referencia)",
-        "group": "Plazos",
-        "type": "number",
-        "default": ""
-      },
-      {
-        "key": "thirdPartyDays",
-        "label": "Anticipación para designar tercero (tabla de referencia)",
-        "group": "Plazos",
-        "type": "number",
-        "default": ""
       }
     ]
   },
@@ -664,20 +650,6 @@
         "group": "Firma y notaría",
         "type": "text",
         "default": ""
-      },
-      {
-        "key": "refundDays",
-        "label": "Plazo de restitución del depósito (tabla de referencia)",
-        "group": "Plazos",
-        "type": "number",
-        "default": ""
-      },
-      {
-        "key": "thirdPartyDays",
-        "label": "Anticipación para designar tercero (tabla de referencia)",
-        "group": "Plazos",
-        "type": "number",
-        "default": ""
       }
     ]
   },
@@ -938,27 +910,6 @@
         "group": "Firma y notaría",
         "type": "text",
         "default": ""
-      },
-      {
-        "key": "civilStatus",
-        "label": "Estado civil y datos del acta de matrimonio",
-        "group": "Personas",
-        "type": "textarea",
-        "default": "soltero"
-      },
-      {
-        "key": "refundDays",
-        "label": "Plazo de restitución del depósito (tabla de referencia)",
-        "group": "Plazos",
-        "type": "number",
-        "default": ""
-      },
-      {
-        "key": "thirdPartyDays",
-        "label": "Anticipación para designar tercero (tabla de referencia)",
-        "group": "Plazos",
-        "type": "number",
-        "default": ""
       }
     ]
   },
@@ -1197,20 +1148,6 @@
         "label": "Año de firma",
         "group": "Firma y notaría",
         "type": "text",
-        "default": ""
-      },
-      {
-        "key": "refundDays",
-        "label": "Plazo de restitución del depósito (tabla de referencia)",
-        "group": "Plazos",
-        "type": "number",
-        "default": ""
-      },
-      {
-        "key": "thirdPartyDays",
-        "label": "Anticipación para designar tercero (tabla de referencia)",
-        "group": "Plazos",
-        "type": "number",
         "default": ""
       }
     ]
@@ -1458,20 +1395,6 @@
         "group": "Firma y notaría",
         "type": "text",
         "default": ""
-      },
-      {
-        "key": "refundDays",
-        "label": "Plazo de restitución del depósito (tabla de referencia)",
-        "group": "Plazos",
-        "type": "number",
-        "default": ""
-      },
-      {
-        "key": "thirdPartyDays",
-        "label": "Anticipación para designar tercero (tabla de referencia)",
-        "group": "Plazos",
-        "type": "number",
-        "default": ""
       }
     ]
   },
@@ -1703,27 +1626,6 @@
         "label": "Año de firma",
         "group": "Firma y notaría",
         "type": "text",
-        "default": ""
-      },
-      {
-        "key": "civilStatus",
-        "label": "Estado civil y datos del acta de matrimonio",
-        "group": "Personas",
-        "type": "textarea",
-        "default": "soltero"
-      },
-      {
-        "key": "refundDays",
-        "label": "Plazo de restitución del depósito (tabla de referencia)",
-        "group": "Plazos",
-        "type": "number",
-        "default": ""
-      },
-      {
-        "key": "thirdPartyDays",
-        "label": "Anticipación para designar tercero (tabla de referencia)",
-        "group": "Plazos",
-        "type": "number",
         "default": ""
       }
     ]

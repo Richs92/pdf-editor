@@ -19,10 +19,13 @@ for item in json.loads(Path('web/contracts-catalog.json').read_text()):
         assert archive.testzip() is None
         root=ET.fromstring(archive.read('word/document.xml'))
         text=''.join(t.text or '' for t in root.findall('.//w:t',NS))
+        assert 'DATOS A COMPLETAR ANTES DE FIRMAR' not in text,item['id']
+        assert 'Los campos resaltados en amarillo' not in text,item['id']
         assert not re.search(r'\{[a-zA-Z][a-zA-Z0-9]*\}|\[[A-ZÁÉÍÓÚÑ][^]]*\]',text),item['id']
         photos=[n for n in archive.namelist() if 'terminavit-ine' in n]
         with fitz.open(base.with_suffix('.pdf')) as pdf:
             ptext=''.join(page.get_text() for page in pdf)
+            assert 'DATOS A COMPLETAR ANTES DE FIRMAR' not in ptext,item['id']
             # Word table headers intentionally repeat when a table crosses PDF pages.
             expected=Counter(normalized(text))
             actual=Counter(normalized(ptext))
