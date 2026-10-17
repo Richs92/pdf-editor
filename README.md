@@ -74,3 +74,24 @@ python3 tests/verify_contract_exports.py
 ```
 
 La prueba de navegador abre las siete variantes, llena sus campos, incorpora imágenes ficticias en un contrato y un pagaré, descarga Word/PDF, comprueba la opción para Google Docs y el ancho móvil. La verificación de exportaciones requiere PyMuPDF y compara el contenido completo del Word con el PDF (descontando encabezados de tabla repetidos), revisa anexos y descarta páginas vacías. Los resultados se guardan únicamente en `artifacts/`, excluido de Git y del despliegue. No se prueba una cámara física ni una sesión real de Google Docs en el entorno automatizado.
+
+## Recibo predial de Alameda
+
+La opción **Predial** abre `predial.html`. Usa el PDF proporcionado y rellena las dos copias de su única página con los mismos datos:
+
+- Clave catastral: seis bloques de tres dígitos, con `007` y `001` fijos. Admite pegar los 18 dígitos completos, con o sin guiones.
+- Nombre, domicilio y vigencia hasta (fecha seleccionada manualmente; el PDF usa día/mes/año).
+- Total, superficie de terreno y superficie construida: edición opcional con casillas de activación. Si no se activan, se conservan los valores originales aunque haya texto diferente en los cuadros deshabilitados.
+
+Cuando se edita el total, su importe en letra se calcula en español con los mismos centavos en ambas copias. No se recalculan conceptos, periodos, calificación, referencias de pago ni códigos de barras. Se conservan imágenes y disposición del documento. La plantilla preparada elimina el texto anterior de los ocho campos por copia; la generación dibuja los nuevos valores en las posiciones originales.
+
+El original está en `data/predial/original.pdf`. `npm run prepare:predial` regenera los archivos de `web/predial/` usando PyMuPDF. Para comprobar el formulario móvil, la descarga y ambas copias:
+
+```sh
+npm run build
+npm test
+npm run test:predial
+python3 tests/verify_predial_exports.py
+```
+
+Las verificaciones comparan los campos en ambas mitades, el comportamiento de los opcionales y los contenidos de las imágenes originales. Resultados en `artifacts/predial/`, fuera del despliegue.

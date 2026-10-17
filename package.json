@@ -7,7 +7,9 @@
     "build": "node scripts/build.mjs",
     "test": "node --test tests/*.test.mjs",
     "test:contracts": "node tests/browser/contracts.mjs",
-    "prepare:contracts": "python3 scripts/prepare-contracts.py"
+    "prepare:contracts": "python3 scripts/prepare-contracts.py",
+    "test:predial": "node tests/browser/predial.mjs",
+    "prepare:predial": "python3 scripts/prepare-predial.py"
   },
   "dependencies": {
     "docx-preview": "0.3.7",
