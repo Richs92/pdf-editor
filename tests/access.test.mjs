@@ -84,7 +84,31 @@ test('recuperación compatible con el enlace predeterminado de Supabase',async()
  const owner=client();assert.equal((await owner.call('/auth/login',{method:'POST',body:{username:'admin',password:process.env.ADMIN_INITIAL_PASSWORD}})).status,200);
  assert.equal((await owner.call('/me')).data.user.username,'admin');
  assert.equal(app.state.auth.find(u=>u.id===ADMIN_ID).app_metadata.terminavit_password_initialized,true);
+ assert.equal(app.state.auth.find(u=>u.id===ADMIN_ID).email_confirmed,true);
  app.state.auth.find(u=>u.id===ADMIN_ID).password='Changed-admin-password-123!';
  assert.equal((await client().call('/auth/login',{method:'POST',body:{username:'admin',password:process.env.ADMIN_INITIAL_PASSWORD}})).status,401);
  }finally{delete process.env.ADMIN_INITIAL_PASSWORD;app.state.auth.find(u=>u.id===ADMIN_ID).password=original;}
  });
+
+test('admin: errores accionables sin exponer datos de Supabase',async()=>{
+ const previous=process.env.ADMIN_INITIAL_PASSWORD;
+ try{
+ delete process.env.ADMIN_INITIAL_PASSWORD;
+ let result=await client().call('/auth/login',{method:'POST',body:{username:'admin',password:'Wrong-owner-password-123!'}});
+ assert.equal(result.status,503);assert.match(result.data.error,/ADMIN_INITIAL_PASSWORD.*Production/);
+ process.env.ADMIN_INITIAL_PASSWORD='short';
+ result=await client().call('/auth/login',{method:'POST',body:{username:'admin',password:'short'}});assert.match(result.data.error,/12 caracteres/);
+ for(const [path,method,status,code,expected] of [
+ ['/rest/v1/app_users','GET',404,'PGRST205',/Faltan las tablas/],
+ ['/rest/v1/app_users','GET',403,'42501',/service_role/],
+ ['/auth/v1/admin/users/'+ADMIN_ID,'PUT',422,'weak_password',/Supabase rechazó la contraseña/],
+ ['/rest/v1/rpc/app_write_audit','POST',404,'PGRST202',/Faltan funciones/]
+ ]){
+ process.env.ADMIN_INITIAL_PASSWORD='Diagnostic-admin-password-123!';
+ app.state.auth.find(u=>u.id===ADMIN_ID).app_metadata={};
+ app.state.failures.push({path,method,status,body:{code,message:'PRIVATE-UPSTREAM-DATA'}});
+ result=await client().call('/auth/login',{method:'POST',body:{username:'admin',password:path.includes('app_write_audit')?ADMIN_PASSWORD:process.env.ADMIN_INITIAL_PASSWORD}});
+ assert.match(result.data.error,expected);assert.ok(!JSON.stringify(result.data).includes('PRIVATE-UPSTREAM-DATA'));
+ }
+ }finally{if(previous===undefined)delete process.env.ADMIN_INITIAL_PASSWORD;else process.env.ADMIN_INITIAL_PASSWORD=previous;app.state.failures.length=0;}
+});

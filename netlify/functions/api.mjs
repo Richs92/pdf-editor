@@ -14,7 +14,14 @@ async function supabase(path,{method='GET',body,token,headers={}}={}){
  const config=settings();let response;
  try{response=await fetch(config.url+path,{method,headers:{apikey:config.key,Authorization:'Bearer '+(token||config.key),'Content-Type':'application/json',...headers},body:body===undefined?undefined:JSON.stringify(body),signal:AbortSignal.timeout(15000)});}catch{throw new HTTPError(503,'No se pudo conectar al servicio. Intenta de nuevo.');}
  const text=await response.text();let result;try{result=text?JSON.parse(text):null;}catch{result=null;}
- if(!response.ok){if(/invalid api key/i.test(result?.message||''))throw new HTTPError(503,'El servicio de acceso necesita revisión del administrador.');const error=new HTTPError(response.status>=500?503:response.status,'No se pudo completar la operación.');error.upstream=result;throw error;}
+ if(!response.ok){if(/invalid api key/i.test(result?.message||''))throw new HTTPError(503,'El servicio de acceso necesita revisión del administrador.');const code=result?.code||result?.error_code;
+  let message='No se pudo completar la operación.',status=response.status>=500?503:response.status;
+  if(code==='weak_password'||code==='validation_failed'&&path.startsWith('/auth/v1/admin/users/'))message='Supabase rechazó la contraseña. En Netlify, cambia ADMIN_INITIAL_PASSWORD por una de al menos 12 caracteres con mayúsculas, minúsculas, números y símbolos, y publica de nuevo.';
+  else if(code==='email_not_confirmed')message='La cuenta de administrador sigue pendiente de confirmación en Supabase.';
+  else if(code==='PGRST205'||code==='42P01'){message='Faltan las tablas de acceso en el proyecto de Supabase conectado a Netlify. Revisa SUPABASE_URL y ejecuta supabase/setup.sql en ese proyecto.';status=503;}
+  else if(code==='PGRST202'||code==='42883'){message='Faltan funciones de acceso en Supabase o están desactualizadas. Ejecuta de nuevo supabase/setup.sql en el proyecto conectado a Netlify.';status=503;}
+  else if(code==='42501'||path.startsWith('/rest/v1/')&&[401,403].includes(response.status)||path.startsWith('/auth/v1/admin/')&&[401,403].includes(response.status)){message='Netlify no tiene permisos de administrador en Supabase. Revisa que SUPABASE_SERVICE_ROLE_KEY sea la clave service_role del mismo proyecto que SUPABASE_URL, disponible para Functions.';status=503;}
+  const error=new HTTPError(status,message);error.upstream=result;throw error;}
  return result;
 }
 const rpc=(name,body)=>supabase('/rest/v1/rpc/'+name,{method:'POST',body});
@@ -54,12 +61,12 @@ function email(value){const result=text(value,'el correo',254).toLowerCase();if(
 const USER_DOMAIN='users.terminavit.invalid';
 function username(value){const name=text(value,'el usuario',32).toLowerCase();if(!/^[a-z][a-z0-9._-]{2,31}$/.test(name)||name==='admin')throw new HTTPError(400,'Usa de 3 a 32 letras, números, puntos, guiones o guiones bajos. El usuario admin está reservado.');return name;}
 function publicUser(user){return {...user,username:user.role==='admin'?'admin':user.email?.replace('@'+USER_DOMAIN,'')};}
-async function loginAddress(value){const name=text(value,'el usuario',254).toLowerCase();if(name.includes('@'))return email(name);if(name==='admin'){const admins=await supabase('/rest/v1/app_users?role=eq.admin&select=*&limit=2');if(admins?.length!==1||!admins[0].active)throw new HTTPError(401,'Usuario o contraseña incorrectos.');return admins[0].email;}return username(name)+'@'+USER_DOMAIN;}
-async function initializeAdmin(address,password){
- const initial=process.env.ADMIN_INITIAL_PASSWORD;if(!initial||initial.length<12||!timingSafeEqual(createHash('sha256').update(initial).digest(),createHash('sha256').update(password).digest()))return false;
+async function loginAddress(value){const name=text(value,'el usuario',254).toLowerCase();if(name.includes('@'))return email(name);if(name==='admin'){const admins=await supabase('/rest/v1/app_users?role=eq.admin&select=*&limit=2');if(!admins?.length)throw new HTTPError(503,'No hay un administrador configurado en este proyecto de Supabase. Ejecuta supabase/bootstrap-admin.sql con el correo de tu cuenta.');if(admins.length!==1)throw new HTTPError(503,'Hay varios administradores configurados. Entra con el correo de tu cuenta para identificar cuál usar.');if(!admins[0].active)throw new HTTPError(403,'La cuenta de administrador está desactivada en Supabase.');return admins[0].email;}return username(name)+'@'+USER_DOMAIN;}
+async function initializeAdmin(address,password,isOwnerLogin=false){
+ const initial=process.env.ADMIN_INITIAL_PASSWORD;if(!initial||initial.length<12){if(isOwnerLogin)throw new HTTPError(503,!initial?'La contraseña inicial no está disponible en Netlify Functions. Revisa ADMIN_INITIAL_PASSWORD en Production y publica de nuevo.':'ADMIN_INITIAL_PASSWORD debe tener al menos 12 caracteres. Corrígela en Netlify y publica de nuevo.');return false;}if(!timingSafeEqual(createHash('sha256').update(initial).digest(),createHash('sha256').update(password).digest()))return false;
  const admins=await supabase('/rest/v1/app_users?role=eq.admin&select=*&limit=2');if(admins?.length!==1||!admins[0].active||admins[0].email!==address)return false;
  const auth=await supabase('/auth/v1/admin/users/'+admins[0].id);if(auth.app_metadata?.terminavit_password_initialized)return false;
- await supabase('/auth/v1/admin/users/'+admins[0].id,{method:'PUT',body:{password,app_metadata:{...auth.app_metadata,terminavit_password_initialized:true}}});return true;
+ await supabase('/auth/v1/admin/users/'+admins[0].id,{method:'PUT',body:{password,email_confirm:true,app_metadata:{...auth.app_metadata,terminavit_password_initialized:true}}});return true;
 }
 function uuid(value){if(typeof value!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value))throw new HTTPError(400,'Identificador de usuario no válido.');return value;}
 function modules(value){if(!Array.isArray(value)||value.some(m=>!MODULES.includes(m)))throw new HTTPError(400,'Selecciona permisos válidos.');return[...new Set(value)];}
@@ -68,7 +75,7 @@ async function audit(context,action,module=null,target=null,details={},source='s
 async function login(event,context){
  const body=bodyJSON(event),address=await loginAddress(body.username??body.email);const password=passwordText(body.password,'la contraseña');let session;
  try{session=await supabase('/auth/v1/token?grant_type=password',{method:'POST',body:{email:address,password}});}catch(error){
-  if([400,401,403].includes(error.status)&&await initializeAdmin(address,password)){session=await supabase('/auth/v1/token?grant_type=password',{method:'POST',body:{email:address,password}});}else if([400,401,403,429].includes(error.status)){await audit(context,'login_failed',null,null,{},'server',address);throw new HTTPError(error.status===429?429:401,error.status===429?'Demasiados intentos. Espera un minuto.':'Usuario o contraseña incorrectos.');}else throw error;
+  if([400,401,403].includes(error.status)&&await initializeAdmin(address,password,String(body.username??body.email).trim().toLowerCase()==='admin')){session=await supabase('/auth/v1/token?grant_type=password',{method:'POST',body:{email:address,password}});}else if([400,401,403,429].includes(error.status)){await audit(context,'login_failed',null,null,{},'server',address);throw new HTTPError(error.status===429?429:401,error.status===429?'Demasiados intentos. Espera un minuto.':'Usuario o contraseña incorrectos.');}else throw error;
  }
  const profiles=await supabase('/rest/v1/app_users?id=eq.'+encodeURIComponent(session.user.id)+'&select=*');const user=profiles?.[0];
  if(!user?.active){context.user=user||null;await audit(context,'login_denied',null,null,{},'server',address);await supabase('/auth/v1/logout?scope=local',{method:'POST',token:session.access_token}).catch(()=>{});throw new HTTPError(403,'Tu cuenta no tiene acceso activo. Contacta al administrador.');}
