@@ -6,8 +6,13 @@
 <header><div class="brand"><span class="icon">▤</span> documento<span style="color:#168265">.</span></div><nav style="display:flex;gap:8px;flex-wrap:wrap"><a class="badge" style="text-decoration:none" href="./water.html">Agua</a><a class="badge" style="text-decoration:none" href="./predial.html">Predial</a><a class="badge" style="text-decoration:none" href="./contracts.html">Contratos y pagaré →</a></nav></header>
 <main><div class="eyebrow">TU DOCUMENTO, ACTUALIZADO</div><h1>Edita los datos de tu PDF</h1><p>Completa el formulario, revisa el resultado y descarga tu archivo.</p>
 <div class="layout"><section class="card form"><h2>Datos del documento</h2><div class="muted">Plantilla · BJ-000063283419.pdf</div>
-<form id="form"><label for="name">Nombre completo</label><input id="name" name="name" maxlength="70" required>
-<label for="address">Dirección</label><textarea id="address" name="address" required></textarea><div class="hint">Hasta 4 líneas, con un máximo de 65 caracteres por línea.</div>
+<form id="form"><label for="name">Nombre completo</label><input id="name" name="name" maxlength="70" data-cfe-uppercase autocapitalize="characters" spellcheck="false" required>
+<h2 style="margin-top:30px">Dirección</h2><div class="hint">El nombre y la dirección se convierten automáticamente a mayúsculas sin acentos.</div>
+<label for="street">Calle y número</label><input id="street" name="street" maxlength="65" data-cfe-uppercase autocapitalize="characters" spellcheck="false" required>
+<label for="crossStreets">Entre calles</label><input id="crossStreets" name="crossStreets" maxlength="65" data-cfe-uppercase autocapitalize="characters" spellcheck="false"><div class="hint">Opcional. Si no lo llenas, esta línea queda vacía.</div>
+<label for="colony">Colonia</label><input id="colony" name="colony" maxlength="54" data-cfe-uppercase autocapitalize="characters" spellcheck="false" required>
+<label for="addressPostalCode">Código postal de la dirección</label><div style="display:flex;align-items:center;gap:10px"><span>C.P.</span><input id="addressPostalCode" name="addressPostalCode" inputmode="numeric" pattern="[0-9]{5}" maxlength="5" required></div><div class="hint">Se imprime junto a la colonia como C.P.80014.</div>
+<label for="cityState">Ciudad y estado</label><input id="cityState" name="cityState" maxlength="65" placeholder="CULIACAN, SIN." data-cfe-uppercase autocapitalize="characters" spellcheck="false" required>
 <label for="service">Número de servicio</label><input id="service" name="service" inputmode="numeric" pattern="[0-9]{12}" maxlength="12" required><div class="hint">Los 12 dígitos que aparecen en tu recibo.</div>
 <div class="note" id="date-summary"></div>
 <h2 style="margin-top:30px">Datos fiscales del receptor</h2>

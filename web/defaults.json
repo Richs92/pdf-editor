@@ -1,1 +1,13 @@
-{"name": "ANDRADE PARRA JUAN SIMON", "address": "PUERTO NATALES 4666 E CP.00000\nBLVD. DEL LAGO Y PUERTO BANUS\nZONA DORADA IC.P.80014\nCULIACAN,Sin.", "service": "546140300406", "rfc": "", "businessName": "", "taxRegime": "000", "postalCode": "00000"}
+{
+  "name": "ANDRADE PARRA JUAN SIMON",
+  "service": "546140300406",
+  "rfc": "",
+  "businessName": "",
+  "taxRegime": "000",
+  "postalCode": "00000",
+  "street": "PUERTO NATALES 4666 E",
+  "crossStreets": "BLVD. DEL LAGO Y PUERTO BANUS",
+  "colony": "ZONA DORADA I",
+  "addressPostalCode": "80014",
+  "cityState": "CULIACAN, SIN."
+}

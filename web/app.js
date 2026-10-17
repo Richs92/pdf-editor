@@ -2,6 +2,7 @@ import {authorize,recordEvent,guardDownload} from './session.js';
 await authorize('cfe');
 import {renderPreview} from './preview.js';
 import {monthOffset, shiftDate} from './dates.js';
+import {normalizeCFEText} from './cfe-fields.js';
 import { generatePDF } from './pdf-editor.js';
 const form = document.querySelector('#form');
 const status = document.querySelector('#status');
@@ -42,7 +43,15 @@ async function initialize() {
     button.disabled = false;
   } catch (error) { status.textContent = error.message; }
 }
-form.addEventListener('input', () => {
+function normalizeInput(input) {
+  if(!input.matches('[data-cfe-uppercase]'))return;
+  const start=input.selectionStart,end=input.selectionEnd,value=input.value;
+  input.value=normalizeCFEText(value);
+  if(start!==null)input.setSelectionRange(normalizeCFEText(value.slice(0,start)).length,normalizeCFEText(value.slice(0,end)).length);
+}
+form.addEventListener('compositionend',event=>normalizeInput(event.target));
+form.addEventListener('input', event => {
+  if(!event.isComposing)normalizeInput(event.target);
   revision++;
   download.style.display = 'none';
   status.textContent = 'Hay cambios pendientes. Actualiza la vista previa.';
