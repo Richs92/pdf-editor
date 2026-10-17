@@ -45,3 +45,32 @@ Las once etiquetas del eje horizontal del gráfico histórico también se actual
 ## Vista previa en celular
 
 La vista previa usa PDF.js incluido localmente y dibuja todas las páginas en canvas, con ancho adaptable y sin visor PDF incrustado. Así no depende de la limitación del visor de iOS que mostraba solo la primera página. Los campos usan 16 px para evitar el zoom automático al enfocar en Safari. El viewport fija escala mínima/máxima 1 y se limitan los gestos de ampliación; algunos navegadores o ajustes de accesibilidad pueden ignorar esta restricción. Se mantiene el desplazamiento vertical normal y el PDF descargado sigue siendo el documento completo.
+
+## Contratos y pagaré
+
+Desde el enlace **Contratos y pagaré** del editor se abre `contracts.html`. Incluye:
+
+- Ratificados: soltero, separación de bienes y sociedad conyugal.
+- Sin ratificar: soltero, separación de bienes y sociedad conyugal.
+- Pagaré TERMINAVIT.
+
+Cada plantilla tiene su formulario con campos distinguidos por contexto: identificación del vendedor/comprador, precio, depósito, penalización, plazos, datos del inmueble y firmas. Los datos repetidos se rellenan en el cuerpo, las firmas y las tablas de referencia. Las tasas e importes en letra se introducen expresamente; no se calculan ni se validan fiscal o jurídicamente. Las cláusulas y tablas de referencia de los originales se conservan, incluso cuando una tabla contiene campos que no aparecen en el cuerpo.
+
+Las fotos opcionales de INE se capturan con la cámara del navegador (`capture="environment"`) o se cargan desde la galería, con frente/reverso del vendedor y del comprador. En el pagaré corresponden al suscriptor y al beneficiario. Se convierten a JPG en el navegador, se ajustan a un máximo de 1600 px y se insertan como anexos en páginas independientes. Las fotos se guardan en memoria por plantilla, sin `localStorage`, sin servidor, sin OCR ni subida automática. La opción de cámara depende de los permisos del dispositivo; la carga de imágenes funciona como alternativa.
+
+**Descargas:** Word conserva los archivos de plantilla y sus formatos, reemplazando los marcadores e incorporando anexos. PDF usa texto seleccionable, formatos de párrafo, tablas (incluidas celdas combinadas) e imágenes, con paginación propia; la vista previa es una referencia del Word. Se incluyen tipografías Liberation (licencia en `web/fonts/LICENSE.txt`). Para Google Docs, se descarga el Word y el usuario lo sube a Drive y selecciona “Abrir con → Documentos de Google”; no se requiere ni se conecta una cuenta Google a esta app.
+
+Las siete plantillas originales están en `data/contracts/`. `npm run prepare:contracts` regenera `web/templates/` y `web/contracts-catalog.json` con nombres de campo inequívocos, manteniendo los elementos XML del Word y sus namespaces. Ejecuta `npm run build` después de cualquier cambio.
+
+### Verificación de contratos
+
+Con Chromium disponible (`CHROMIUM_PATH` permite indicar su ruta):
+
+```sh
+npm ci
+npm run build
+npm run test:contracts
+python3 tests/verify_contract_exports.py
+```
+
+La prueba de navegador abre las siete variantes, llena sus campos, incorpora imágenes ficticias en un contrato y un pagaré, descarga Word/PDF, comprueba la opción para Google Docs y el ancho móvil. La verificación de exportaciones requiere PyMuPDF y compara el contenido completo del Word con el PDF (descontando encabezados de tabla repetidos), revisa anexos y descarta páginas vacías. Los resultados se guardan únicamente en `artifacts/`, excluido de Git y del despliegue. No se prueba una cámara física ni una sesión real de Google Docs en el entorno automatizado.

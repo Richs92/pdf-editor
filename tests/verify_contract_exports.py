@@ -1,0 +1,41 @@
+"""After npm run test:contracts, compare every exported Word/PDF and its INE annexes."""
+from collections import Counter
+from pathlib import Path
+from zipfile import ZipFile
+import json
+import re
+import unicodedata
+import xml.etree.ElementTree as ET
+import fitz
+
+NS={'w':'http://schemas.openxmlformats.org/wordprocessingml/2006/main'}
+W='{'+NS['w']+'}'
+def normalized(text):
+    return re.sub(r'\s+', '', unicodedata.normalize('NFKC',text)).replace('\xad','')
+
+for item in json.loads(Path('web/contracts-catalog.json').read_text()):
+    base=Path('artifacts/contracts')/item['id']
+    with ZipFile(base.with_suffix('.docx')) as archive:
+        assert archive.testzip() is None
+        root=ET.fromstring(archive.read('word/document.xml'))
+        text=''.join(t.text or '' for t in root.findall('.//w:t',NS))
+        assert not re.search(r'\{[a-zA-Z][a-zA-Z0-9]*\}|\[[A-ZÁÉÍÓÚÑ][^]]*\]',text),item['id']
+        photos=[n for n in archive.namelist() if 'terminavit-ine' in n]
+        with fitz.open(base.with_suffix('.pdf')) as pdf:
+            ptext=''.join(page.get_text() for page in pdf)
+            # Word table headers intentionally repeat when a table crosses PDF pages.
+            expected=Counter(normalized(text))
+            actual=Counter(normalized(ptext))
+            for row in root.findall('.//w:tr',NS):
+                header=row.find('w:trPr/w:tblHeader',NS)
+                if header is None or header.get(W+'val') in ['0','false','off']:
+                    continue
+                heading=normalized(''.join(t.text or '' for t in row.findall('.//w:t',NS)))
+                repeats=normalized(ptext).count(heading)-normalized(text).count(heading)
+                if repeats>0:actual.subtract(Counter({k:v*repeats for k,v in Counter(heading).items()}))
+            assert expected==actual,(item['id'],expected-actual,actual-expected)
+            assert all(page.get_text().strip() or page.get_images() for page in pdf),'Página vacía'
+            assert sum(bool(page.get_images()) for page in pdf)==len(photos),(item['id'],'Anexos incompletos')
+            for value in ['PEDRO SUSCRIPTOR DE PRUEBA'] if item['id']=='pagare' else ['ANA PÉREZ GARCÍA','LUIS LÓPEZ RUIZ','INE VENDEDOR 123456789','INE COMPRADOR 987654321']:
+                assert normalized(value) in normalized(text) and normalized(value) in normalized(ptext)
+            print(f"{item['id']}: texto completo, {len(pdf)} páginas y {len(photos)} anexos verificados")

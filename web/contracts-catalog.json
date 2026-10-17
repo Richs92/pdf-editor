@@ -1,0 +1,1731 @@
+[
+  {
+    "id": "pagare",
+    "title": "Pagaré TERMINAVIT",
+    "group": "Pagaré",
+    "template": "templates/pagare.docx",
+    "fields": [
+      {
+        "key": "amount",
+        "label": "Importe del pagaré ($)",
+        "group": "Datos del pagaré",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "issueCity",
+        "label": "Lugar de suscripción",
+        "group": "Datos del pagaré",
+        "type": "text",
+        "default": "Culiacán, Sinaloa"
+      },
+      {
+        "key": "issueDate",
+        "label": "Fecha de suscripción (en letra)",
+        "group": "Datos del pagaré",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "dueDate",
+        "label": "Fecha de vencimiento (en letra)",
+        "group": "Datos del pagaré",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "paymentCity",
+        "label": "Lugar de pago",
+        "group": "Datos del pagaré",
+        "type": "text",
+        "default": "Culiacán, Sinaloa"
+      },
+      {
+        "key": "subscriber",
+        "label": "Nombre completo del suscriptor",
+        "group": "Datos del pagaré",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "subscriberAddress",
+        "label": "Domicilio completo del suscriptor",
+        "group": "Datos del pagaré",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "beneficiary",
+        "label": "Nombre del beneficiario",
+        "group": "Datos del pagaré",
+        "type": "text",
+        "default": "TERMINAVIT"
+      },
+      {
+        "key": "amountWords",
+        "label": "Importe en letra (incluye centavos y moneda)",
+        "group": "Datos del pagaré",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "beneficiaryAddress",
+        "label": "Domicilio completo del beneficiario",
+        "group": "Datos del pagaré",
+        "type": "text",
+        "default": "Avenida Juan de la Barrera número 1141, local 8 “Plaza del Parque”, Colonia Chapultepec, CP 80040, Culiacán, Sinaloa"
+      },
+      {
+        "key": "ordinaryRate",
+        "label": "Tasa ordinaria anual (%)",
+        "group": "Datos del pagaré",
+        "type": "text",
+        "default": "40"
+      },
+      {
+        "key": "ordinaryWords",
+        "label": "Tasa ordinaria en letra",
+        "group": "Datos del pagaré",
+        "type": "text",
+        "default": "cuarenta"
+      },
+      {
+        "key": "lateRate",
+        "label": "Tasa moratoria anual (%)",
+        "group": "Datos del pagaré",
+        "type": "text",
+        "default": "80"
+      },
+      {
+        "key": "lateWords",
+        "label": "Tasa moratoria en letra",
+        "group": "Datos del pagaré",
+        "type": "text",
+        "default": "ochenta"
+      },
+      {
+        "key": "noteJurisdiction",
+        "label": "Ciudad y estado para jurisdicción",
+        "group": "Datos del pagaré",
+        "type": "text",
+        "default": "Culiacán, Sinaloa"
+      }
+    ]
+  },
+  {
+    "id": "ratificado-separacion",
+    "title": "Separación de bienes",
+    "group": "Ratificados",
+    "template": "templates/ratificado-separacion.docx",
+    "fields": [
+      {
+        "key": "seller",
+        "label": "Nombre completo del vendedor",
+        "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "buyer",
+        "label": "Nombre completo del comprador",
+        "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "civilStatus",
+        "label": "Estado civil y datos del acta de matrimonio",
+        "group": "Personas",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "sellerId",
+        "label": "Identificación del vendedor: tipo y número",
+        "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "sellerAddress",
+        "label": "Domicilio completo del vendedor",
+        "group": "Personas",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "title",
+        "label": "Escritura o título: número, fecha y notaría",
+        "group": "Inmueble",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "registry",
+        "label": "Datos de inscripción en el Registro Público",
+        "group": "Inmueble",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "buyerId",
+        "label": "Identificación del comprador: tipo y número",
+        "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "buyerAddress",
+        "label": "Domicilio completo del comprador",
+        "group": "Personas",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "propertyAddress",
+        "label": "Dirección completa del inmueble",
+        "group": "Inmueble",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "boundaries",
+        "label": "Medidas y colindancias",
+        "group": "Inmueble",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "cadastre",
+        "label": "Clave catastral",
+        "group": "Inmueble",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "folio",
+        "label": "Folio registral",
+        "group": "Inmueble",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "price",
+        "label": "Precio de compraventa ($)",
+        "group": "Importes y pago",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "priceWords",
+        "label": "Precio en letra",
+        "group": "Importes y pago",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "payment",
+        "label": "Forma de pago",
+        "group": "Importes y pago",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "lien",
+        "label": "Tipo de gravamen",
+        "group": "Inmueble",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "credit",
+        "label": "Número de crédito",
+        "group": "Inmueble",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "balance",
+        "label": "Saldo insoluto ($)",
+        "group": "Inmueble",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "cancelDays",
+        "label": "Días para cancelar el gravamen",
+        "group": "Plazos",
+        "type": "number",
+        "default": ""
+      },
+      {
+        "key": "ratifyDays",
+        "label": "Días para ratificar firmas",
+        "group": "Plazos",
+        "type": "number",
+        "default": ""
+      },
+      {
+        "key": "deposit",
+        "label": "Depósito en garantía ($)",
+        "group": "Importes y pago",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "depositWords",
+        "label": "Depósito en letra",
+        "group": "Importes y pago",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "deadline",
+        "label": "Fecha límite del contrato definitivo",
+        "group": "Plazos",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "noticeDays",
+        "label": "Días hábiles de anticipación para convocar a firma",
+        "group": "Plazos",
+        "type": "number",
+        "default": ""
+      },
+      {
+        "key": "penalty",
+        "label": "Doble del depósito / penalización ($)",
+        "group": "Importes y pago",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "penaltyWords",
+        "label": "Penalización en letra",
+        "group": "Importes y pago",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "penaltyDays",
+        "label": "Días para pagar el doble del depósito",
+        "group": "Plazos",
+        "type": "number",
+        "default": ""
+      },
+      {
+        "key": "jurisdiction",
+        "label": "Ciudad para jurisdicción (Sinaloa)",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "signCity",
+        "label": "Ciudad y estado de firma",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "signHour",
+        "label": "Hora de firma",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "signDay",
+        "label": "Día de firma",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "signMonth",
+        "label": "Mes de firma",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "signYear",
+        "label": "Año de firma",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "notary",
+        "label": "Nombre del notario público",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "notaryNumber",
+        "label": "Número de notaría",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "notaryCity",
+        "label": "Ciudad de la notaría (Sinaloa)",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "refundDays",
+        "label": "Plazo de restitución del depósito (tabla de referencia)",
+        "group": "Plazos",
+        "type": "number",
+        "default": ""
+      },
+      {
+        "key": "thirdPartyDays",
+        "label": "Anticipación para designar tercero (tabla de referencia)",
+        "group": "Plazos",
+        "type": "number",
+        "default": ""
+      }
+    ]
+  },
+  {
+    "id": "ratificado-sociedad",
+    "title": "Sociedad conyugal",
+    "group": "Ratificados",
+    "template": "templates/ratificado-sociedad.docx",
+    "fields": [
+      {
+        "key": "seller",
+        "label": "Nombre completo del vendedor",
+        "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "buyer",
+        "label": "Nombre completo del comprador",
+        "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "civilStatus",
+        "label": "Estado civil y datos del acta de matrimonio",
+        "group": "Personas",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "sellerId",
+        "label": "Identificación del vendedor: tipo y número",
+        "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "sellerAddress",
+        "label": "Domicilio completo del vendedor",
+        "group": "Personas",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "title",
+        "label": "Escritura o título: número, fecha y notaría",
+        "group": "Inmueble",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "registry",
+        "label": "Datos de inscripción en el Registro Público",
+        "group": "Inmueble",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "buyerId",
+        "label": "Identificación del comprador: tipo y número",
+        "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "buyerAddress",
+        "label": "Domicilio completo del comprador",
+        "group": "Personas",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "propertyAddress",
+        "label": "Dirección completa del inmueble",
+        "group": "Inmueble",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "boundaries",
+        "label": "Medidas y colindancias",
+        "group": "Inmueble",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "cadastre",
+        "label": "Clave catastral",
+        "group": "Inmueble",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "folio",
+        "label": "Folio registral",
+        "group": "Inmueble",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "price",
+        "label": "Precio de compraventa ($)",
+        "group": "Importes y pago",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "priceWords",
+        "label": "Precio en letra",
+        "group": "Importes y pago",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "payment",
+        "label": "Forma de pago",
+        "group": "Importes y pago",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "lien",
+        "label": "Tipo de gravamen",
+        "group": "Inmueble",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "credit",
+        "label": "Número de crédito",
+        "group": "Inmueble",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "balance",
+        "label": "Saldo insoluto ($)",
+        "group": "Inmueble",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "cancelDays",
+        "label": "Días para cancelar el gravamen",
+        "group": "Plazos",
+        "type": "number",
+        "default": ""
+      },
+      {
+        "key": "spouse",
+        "label": "Nombre completo del cónyuge",
+        "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "ratifyDays",
+        "label": "Días para ratificar firmas",
+        "group": "Plazos",
+        "type": "number",
+        "default": ""
+      },
+      {
+        "key": "deposit",
+        "label": "Depósito en garantía ($)",
+        "group": "Importes y pago",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "depositWords",
+        "label": "Depósito en letra",
+        "group": "Importes y pago",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "deadline",
+        "label": "Fecha límite del contrato definitivo",
+        "group": "Plazos",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "noticeDays",
+        "label": "Días hábiles de anticipación para convocar a firma",
+        "group": "Plazos",
+        "type": "number",
+        "default": ""
+      },
+      {
+        "key": "penalty",
+        "label": "Doble del depósito / penalización ($)",
+        "group": "Importes y pago",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "penaltyWords",
+        "label": "Penalización en letra",
+        "group": "Importes y pago",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "penaltyDays",
+        "label": "Días para pagar el doble del depósito",
+        "group": "Plazos",
+        "type": "number",
+        "default": ""
+      },
+      {
+        "key": "jurisdiction",
+        "label": "Ciudad para jurisdicción (Sinaloa)",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "signCity",
+        "label": "Ciudad y estado de firma",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "signHour",
+        "label": "Hora de firma",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "signDay",
+        "label": "Día de firma",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "signMonth",
+        "label": "Mes de firma",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "signYear",
+        "label": "Año de firma",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "notary",
+        "label": "Nombre del notario público",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "notaryNumber",
+        "label": "Número de notaría",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "notaryCity",
+        "label": "Ciudad de la notaría (Sinaloa)",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "refundDays",
+        "label": "Plazo de restitución del depósito (tabla de referencia)",
+        "group": "Plazos",
+        "type": "number",
+        "default": ""
+      },
+      {
+        "key": "thirdPartyDays",
+        "label": "Anticipación para designar tercero (tabla de referencia)",
+        "group": "Plazos",
+        "type": "number",
+        "default": ""
+      }
+    ]
+  },
+  {
+    "id": "ratificado-soltero",
+    "title": "Soltero",
+    "group": "Ratificados",
+    "template": "templates/ratificado-soltero.docx",
+    "fields": [
+      {
+        "key": "seller",
+        "label": "Nombre completo del vendedor",
+        "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "buyer",
+        "label": "Nombre completo del comprador",
+        "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "sellerId",
+        "label": "Identificación del vendedor: tipo y número",
+        "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "sellerAddress",
+        "label": "Domicilio completo del vendedor",
+        "group": "Personas",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "title",
+        "label": "Escritura o título: número, fecha y notaría",
+        "group": "Inmueble",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "registry",
+        "label": "Datos de inscripción en el Registro Público",
+        "group": "Inmueble",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "buyerId",
+        "label": "Identificación del comprador: tipo y número",
+        "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "buyerAddress",
+        "label": "Domicilio completo del comprador",
+        "group": "Personas",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "propertyAddress",
+        "label": "Dirección completa del inmueble",
+        "group": "Inmueble",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "boundaries",
+        "label": "Medidas y colindancias",
+        "group": "Inmueble",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "cadastre",
+        "label": "Clave catastral",
+        "group": "Inmueble",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "folio",
+        "label": "Folio registral",
+        "group": "Inmueble",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "price",
+        "label": "Precio de compraventa ($)",
+        "group": "Importes y pago",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "priceWords",
+        "label": "Precio en letra",
+        "group": "Importes y pago",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "payment",
+        "label": "Forma de pago",
+        "group": "Importes y pago",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "lien",
+        "label": "Tipo de gravamen",
+        "group": "Inmueble",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "credit",
+        "label": "Número de crédito",
+        "group": "Inmueble",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "balance",
+        "label": "Saldo insoluto ($)",
+        "group": "Inmueble",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "cancelDays",
+        "label": "Días para cancelar el gravamen",
+        "group": "Plazos",
+        "type": "number",
+        "default": ""
+      },
+      {
+        "key": "ratifyDays",
+        "label": "Días para ratificar firmas",
+        "group": "Plazos",
+        "type": "number",
+        "default": ""
+      },
+      {
+        "key": "deposit",
+        "label": "Depósito en garantía ($)",
+        "group": "Importes y pago",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "depositWords",
+        "label": "Depósito en letra",
+        "group": "Importes y pago",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "deadline",
+        "label": "Fecha límite del contrato definitivo",
+        "group": "Plazos",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "noticeDays",
+        "label": "Días hábiles de anticipación para convocar a firma",
+        "group": "Plazos",
+        "type": "number",
+        "default": ""
+      },
+      {
+        "key": "penalty",
+        "label": "Doble del depósito / penalización ($)",
+        "group": "Importes y pago",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "penaltyWords",
+        "label": "Penalización en letra",
+        "group": "Importes y pago",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "penaltyDays",
+        "label": "Días para pagar el doble del depósito",
+        "group": "Plazos",
+        "type": "number",
+        "default": ""
+      },
+      {
+        "key": "jurisdiction",
+        "label": "Ciudad para jurisdicción (Sinaloa)",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "signCity",
+        "label": "Ciudad y estado de firma",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "signHour",
+        "label": "Hora de firma",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "signDay",
+        "label": "Día de firma",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "signMonth",
+        "label": "Mes de firma",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "signYear",
+        "label": "Año de firma",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "notary",
+        "label": "Nombre del notario público",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "notaryNumber",
+        "label": "Número de notaría",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "notaryCity",
+        "label": "Ciudad de la notaría (Sinaloa)",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "civilStatus",
+        "label": "Estado civil y datos del acta de matrimonio",
+        "group": "Personas",
+        "type": "textarea",
+        "default": "soltero"
+      },
+      {
+        "key": "refundDays",
+        "label": "Plazo de restitución del depósito (tabla de referencia)",
+        "group": "Plazos",
+        "type": "number",
+        "default": ""
+      },
+      {
+        "key": "thirdPartyDays",
+        "label": "Anticipación para designar tercero (tabla de referencia)",
+        "group": "Plazos",
+        "type": "number",
+        "default": ""
+      }
+    ]
+  },
+  {
+    "id": "sin-ratificar-separacion",
+    "title": "Separación de bienes",
+    "group": "Sin ratificar",
+    "template": "templates/sin-ratificar-separacion.docx",
+    "fields": [
+      {
+        "key": "seller",
+        "label": "Nombre completo del vendedor",
+        "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "buyer",
+        "label": "Nombre completo del comprador",
+        "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "civilStatus",
+        "label": "Estado civil y datos del acta de matrimonio",
+        "group": "Personas",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "sellerId",
+        "label": "Identificación del vendedor: tipo y número",
+        "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "sellerAddress",
+        "label": "Domicilio completo del vendedor",
+        "group": "Personas",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "title",
+        "label": "Escritura o título: número, fecha y notaría",
+        "group": "Inmueble",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "registry",
+        "label": "Datos de inscripción en el Registro Público",
+        "group": "Inmueble",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "buyerId",
+        "label": "Identificación del comprador: tipo y número",
+        "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "buyerAddress",
+        "label": "Domicilio completo del comprador",
+        "group": "Personas",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "propertyAddress",
+        "label": "Dirección completa del inmueble",
+        "group": "Inmueble",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "boundaries",
+        "label": "Medidas y colindancias",
+        "group": "Inmueble",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "cadastre",
+        "label": "Clave catastral",
+        "group": "Inmueble",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "folio",
+        "label": "Folio registral",
+        "group": "Inmueble",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "price",
+        "label": "Precio de compraventa ($)",
+        "group": "Importes y pago",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "priceWords",
+        "label": "Precio en letra",
+        "group": "Importes y pago",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "payment",
+        "label": "Forma de pago",
+        "group": "Importes y pago",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "lien",
+        "label": "Tipo de gravamen",
+        "group": "Inmueble",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "credit",
+        "label": "Número de crédito",
+        "group": "Inmueble",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "balance",
+        "label": "Saldo insoluto ($)",
+        "group": "Inmueble",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "cancelDays",
+        "label": "Días para cancelar el gravamen",
+        "group": "Plazos",
+        "type": "number",
+        "default": ""
+      },
+      {
+        "key": "deposit",
+        "label": "Depósito en garantía ($)",
+        "group": "Importes y pago",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "depositWords",
+        "label": "Depósito en letra",
+        "group": "Importes y pago",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "deadline",
+        "label": "Fecha límite del contrato definitivo",
+        "group": "Plazos",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "noticeDays",
+        "label": "Días hábiles de anticipación para convocar a firma",
+        "group": "Plazos",
+        "type": "number",
+        "default": ""
+      },
+      {
+        "key": "penalty",
+        "label": "Doble del depósito / penalización ($)",
+        "group": "Importes y pago",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "penaltyWords",
+        "label": "Penalización en letra",
+        "group": "Importes y pago",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "penaltyDays",
+        "label": "Días para pagar el doble del depósito",
+        "group": "Plazos",
+        "type": "number",
+        "default": ""
+      },
+      {
+        "key": "jurisdiction",
+        "label": "Ciudad para jurisdicción (Sinaloa)",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "signCity",
+        "label": "Ciudad y estado de firma",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "signHour",
+        "label": "Hora de firma",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "signDay",
+        "label": "Día de firma",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "signMonth",
+        "label": "Mes de firma",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "signYear",
+        "label": "Año de firma",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "refundDays",
+        "label": "Plazo de restitución del depósito (tabla de referencia)",
+        "group": "Plazos",
+        "type": "number",
+        "default": ""
+      },
+      {
+        "key": "thirdPartyDays",
+        "label": "Anticipación para designar tercero (tabla de referencia)",
+        "group": "Plazos",
+        "type": "number",
+        "default": ""
+      }
+    ]
+  },
+  {
+    "id": "sin-ratificar-sociedad",
+    "title": "Sociedad conyugal",
+    "group": "Sin ratificar",
+    "template": "templates/sin-ratificar-sociedad.docx",
+    "fields": [
+      {
+        "key": "seller",
+        "label": "Nombre completo del vendedor",
+        "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "buyer",
+        "label": "Nombre completo del comprador",
+        "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "civilStatus",
+        "label": "Estado civil y datos del acta de matrimonio",
+        "group": "Personas",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "sellerId",
+        "label": "Identificación del vendedor: tipo y número",
+        "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "sellerAddress",
+        "label": "Domicilio completo del vendedor",
+        "group": "Personas",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "title",
+        "label": "Escritura o título: número, fecha y notaría",
+        "group": "Inmueble",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "registry",
+        "label": "Datos de inscripción en el Registro Público",
+        "group": "Inmueble",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "buyerId",
+        "label": "Identificación del comprador: tipo y número",
+        "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "buyerAddress",
+        "label": "Domicilio completo del comprador",
+        "group": "Personas",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "propertyAddress",
+        "label": "Dirección completa del inmueble",
+        "group": "Inmueble",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "boundaries",
+        "label": "Medidas y colindancias",
+        "group": "Inmueble",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "cadastre",
+        "label": "Clave catastral",
+        "group": "Inmueble",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "folio",
+        "label": "Folio registral",
+        "group": "Inmueble",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "price",
+        "label": "Precio de compraventa ($)",
+        "group": "Importes y pago",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "priceWords",
+        "label": "Precio en letra",
+        "group": "Importes y pago",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "payment",
+        "label": "Forma de pago",
+        "group": "Importes y pago",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "lien",
+        "label": "Tipo de gravamen",
+        "group": "Inmueble",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "credit",
+        "label": "Número de crédito",
+        "group": "Inmueble",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "balance",
+        "label": "Saldo insoluto ($)",
+        "group": "Inmueble",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "cancelDays",
+        "label": "Días para cancelar el gravamen",
+        "group": "Plazos",
+        "type": "number",
+        "default": ""
+      },
+      {
+        "key": "spouse",
+        "label": "Nombre completo del cónyuge",
+        "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "deposit",
+        "label": "Depósito en garantía ($)",
+        "group": "Importes y pago",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "depositWords",
+        "label": "Depósito en letra",
+        "group": "Importes y pago",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "deadline",
+        "label": "Fecha límite del contrato definitivo",
+        "group": "Plazos",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "noticeDays",
+        "label": "Días hábiles de anticipación para convocar a firma",
+        "group": "Plazos",
+        "type": "number",
+        "default": ""
+      },
+      {
+        "key": "penalty",
+        "label": "Doble del depósito / penalización ($)",
+        "group": "Importes y pago",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "penaltyWords",
+        "label": "Penalización en letra",
+        "group": "Importes y pago",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "penaltyDays",
+        "label": "Días para pagar el doble del depósito",
+        "group": "Plazos",
+        "type": "number",
+        "default": ""
+      },
+      {
+        "key": "jurisdiction",
+        "label": "Ciudad para jurisdicción (Sinaloa)",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "signCity",
+        "label": "Ciudad y estado de firma",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "signHour",
+        "label": "Hora de firma",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "signDay",
+        "label": "Día de firma",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "signMonth",
+        "label": "Mes de firma",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "signYear",
+        "label": "Año de firma",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "refundDays",
+        "label": "Plazo de restitución del depósito (tabla de referencia)",
+        "group": "Plazos",
+        "type": "number",
+        "default": ""
+      },
+      {
+        "key": "thirdPartyDays",
+        "label": "Anticipación para designar tercero (tabla de referencia)",
+        "group": "Plazos",
+        "type": "number",
+        "default": ""
+      }
+    ]
+  },
+  {
+    "id": "sin-ratificar-soltero",
+    "title": "Soltero",
+    "group": "Sin ratificar",
+    "template": "templates/sin-ratificar-soltero.docx",
+    "fields": [
+      {
+        "key": "seller",
+        "label": "Nombre completo del vendedor",
+        "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "buyer",
+        "label": "Nombre completo del comprador",
+        "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "sellerId",
+        "label": "Identificación del vendedor: tipo y número",
+        "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "sellerAddress",
+        "label": "Domicilio completo del vendedor",
+        "group": "Personas",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "title",
+        "label": "Escritura o título: número, fecha y notaría",
+        "group": "Inmueble",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "registry",
+        "label": "Datos de inscripción en el Registro Público",
+        "group": "Inmueble",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "buyerId",
+        "label": "Identificación del comprador: tipo y número",
+        "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "buyerAddress",
+        "label": "Domicilio completo del comprador",
+        "group": "Personas",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "propertyAddress",
+        "label": "Dirección completa del inmueble",
+        "group": "Inmueble",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "boundaries",
+        "label": "Medidas y colindancias",
+        "group": "Inmueble",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "cadastre",
+        "label": "Clave catastral",
+        "group": "Inmueble",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "folio",
+        "label": "Folio registral",
+        "group": "Inmueble",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "price",
+        "label": "Precio de compraventa ($)",
+        "group": "Importes y pago",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "priceWords",
+        "label": "Precio en letra",
+        "group": "Importes y pago",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "payment",
+        "label": "Forma de pago",
+        "group": "Importes y pago",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "lien",
+        "label": "Tipo de gravamen",
+        "group": "Inmueble",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "credit",
+        "label": "Número de crédito",
+        "group": "Inmueble",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "balance",
+        "label": "Saldo insoluto ($)",
+        "group": "Inmueble",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "cancelDays",
+        "label": "Días para cancelar el gravamen",
+        "group": "Plazos",
+        "type": "number",
+        "default": ""
+      },
+      {
+        "key": "deposit",
+        "label": "Depósito en garantía ($)",
+        "group": "Importes y pago",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "depositWords",
+        "label": "Depósito en letra",
+        "group": "Importes y pago",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "deadline",
+        "label": "Fecha límite del contrato definitivo",
+        "group": "Plazos",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "noticeDays",
+        "label": "Días hábiles de anticipación para convocar a firma",
+        "group": "Plazos",
+        "type": "number",
+        "default": ""
+      },
+      {
+        "key": "penalty",
+        "label": "Doble del depósito / penalización ($)",
+        "group": "Importes y pago",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "penaltyWords",
+        "label": "Penalización en letra",
+        "group": "Importes y pago",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "penaltyDays",
+        "label": "Días para pagar el doble del depósito",
+        "group": "Plazos",
+        "type": "number",
+        "default": ""
+      },
+      {
+        "key": "jurisdiction",
+        "label": "Ciudad para jurisdicción (Sinaloa)",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "signCity",
+        "label": "Ciudad y estado de firma",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "signHour",
+        "label": "Hora de firma",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "signDay",
+        "label": "Día de firma",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "signMonth",
+        "label": "Mes de firma",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "signYear",
+        "label": "Año de firma",
+        "group": "Firma y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "civilStatus",
+        "label": "Estado civil y datos del acta de matrimonio",
+        "group": "Personas",
+        "type": "textarea",
+        "default": "soltero"
+      },
+      {
+        "key": "refundDays",
+        "label": "Plazo de restitución del depósito (tabla de referencia)",
+        "group": "Plazos",
+        "type": "number",
+        "default": ""
+      },
+      {
+        "key": "thirdPartyDays",
+        "label": "Anticipación para designar tercero (tabla de referencia)",
+        "group": "Plazos",
+        "type": "number",
+        "default": ""
+      }
+    ]
+  }
+]

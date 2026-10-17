@@ -5,10 +5,18 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "test": "node --test tests/*.test.mjs"
+    "test": "node --test tests/*.test.mjs",
+    "test:contracts": "node tests/browser/contracts.mjs",
+    "prepare:contracts": "python3 scripts/prepare-contracts.py"
   },
   "dependencies": {
+    "docx-preview": "0.3.7",
     "pdf-lib": "1.17.1",
-    "pdfjs-dist": "4.10.38"
+    "pdfjs-dist": "4.10.38",
+    "pdfmake": "0.2.20",
+    "pizzip": "3.2.0"
+  },
+  "devDependencies": {
+    "playwright": "1.64.1"
   }
 }
