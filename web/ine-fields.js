@@ -8,13 +8,15 @@ export function extractINEFields(text,{face='front'}={}) {
   let line=original.replace(/^N0MBRE\b/,'NOMBRE').replace(/^DOMICILI0\b/,'DOMICILIO');
   if(/^NOMBRE\b/.test(line)){section='name';line=line.replace(/^NOMBRE\s*:?\s*/,'');}
   else if(/^DOMICILIO\b/.test(line)){section='address';line=line.replace(/^DOMICILIO\s*:?\s*/,'');}
-  else if(stop.test(line)){section='';continue;}
+  else if(stop.test(line)||/^(CURP|IDMEX|CIC|OCR)/.test(line)){section='';continue;}
   line=line.replace(/(?:^|\s+)SEXO\s*:?\s*[HM].*$/,'').trim();
   if(!line||/^(?:INSTITUTO|NACIONAL|ELECTORAL|M[ÉE]XICO|CREDENCIAL|PARA VOTAR|FIRMA)\b/.test(line))continue;
-  if(section==='name'&&names.length<4)names.push(line);
-  if(section==='address'&&address.length<5)address.push(line);
+  if(section==='name'&&names.length<4&&/^[A-ZÁÉÍÓÚÜÑ][A-ZÁÉÍÓÚÜÑ .’'\-]+$/.test(line)&&!/[0-9]/.test(line))names.push(line);
+  if(section==='address'&&address.length<5&&line.length>=4)address.push(line);
  }
  fields.name=names.join(' ');fields.address=address.join('\n');
+ if(fields.name.split(/\s+/).length<2)fields.name='';
+ if(fields.address.length<6||!/[A-ZÁÉÍÓÚÜÑ]/.test(fields.address))fields.address='';
  const joined=lines.join('\n');
  // The credential number comes from the back, never from CURP or the voter key.
  if(face==='back'){
@@ -32,4 +34,10 @@ export function extractINEFields(text,{face='front'}={}) {
 export function ineTargetFields(documentId,side){
  const seller=side==='seller';
  return documentId==='pagare'?{name:seller?'subscriber':'beneficiary',address:seller?'subscriberAddress':'beneficiaryAddress'}:{name:seller?'seller':'buyer',address:seller?'sellerAddress':'buyerAddress',identification:seller?'sellerId':'buyerId'};
+}
+
+export function ineFieldSelection(fields,{text='',confidence=0,needsCrop=false}={}){
+ const nameBlock=String(text).toUpperCase().split(/N[O0]M[B8]RE\s*:?/)[1]?.split(/DOMICILI[O0]|CLAVE DE ELECTOR|CURP/)[0]||'';
+ const suspectName=/\d/.test(nameBlock);
+ return Object.fromEntries(Object.entries(fields).map(([key,value])=>[key,Boolean(value)&&confidence>=80&&!needsCrop&&!(key==='name'&&suspectName)]));
 }

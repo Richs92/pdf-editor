@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {extractINEFields,ineTargetFields} from '../web/ine-fields.js';
+import {extractINEFields,ineTargetFields,ineFieldSelection} from '../web/ine-fields.js';
 const front=`INSTITUTO NACIONAL ELECTORAL
 CREDENCIAL PARA VOTAR
 NOMBRE
@@ -41,4 +41,11 @@ test('reverso: CIC desde MRZ, sin incluir dígito verificador; OCR solo cuando e
  assert.equal(extractINEFields('IDMEX1234567890<<1234567890123',{face:'back'}).identification,'INE, CIC: 123456789');
  assert.equal(extractINEFields('OCR: 1234567890123',{face:'back'}).identification,'INE, OCR: 1234567890123');
  assert.equal(extractINEFields('CLAVE DE ELECTOR PRGRAN90010125M100\nCURP PEGX900101MXXAAA00',{face:'back'}).identification,'');
+});
+
+test('INE: rechaza números como nombre y fragmentos sueltos del domicilio',()=>{
+ const text='NOMBRE\n400 1932 GUERRERO GUEVARA\nDOMICILIO\nLA\nION SAN GABRIEL ARCANGEL 2625\nO\nCURP ABCD';
+ const fields=extractINEFields(text);assert.equal(fields.name,'');assert.equal(fields.address,'ION SAN GABRIEL ARCANGEL 2625');
+ assert.deepEqual(ineFieldSelection({...fields,name:'GUERRERO GUEVARA'},{text,confidence:95}),{name:false,address:true,identification:false});
+ for(const metadata of [{confidence:95,needsCrop:true},{confidence:65}])assert.ok(Object.values(ineFieldSelection({name:'ANA PEREZ',address:'CALLE ROBLE 123',identification:''},metadata)).every(value=>value===false));
 });

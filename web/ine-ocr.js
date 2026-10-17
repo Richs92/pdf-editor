@@ -1,10 +1,14 @@
+import {prepareINEImage} from './ine-image.js';
+import {extractINEFields} from './ine-fields.js';
 // Images, recognized text and workers remain local. All engine assets are same-origin.
 let queue=Promise.resolve();
-export function recognizeINE(image,{signal,onProgress=()=>{}}={}) {
- const run=()=>read(image,{signal,onProgress});
+export function recognizeINE(image,{signal,onProgress=()=>{},face='front'}={}) {
+ const run=()=>read(image,{signal,onProgress,face});
  const job=queue.then(run,run);queue=job.catch(()=>{});return job;
 }
-async function read(image,{signal,onProgress}){
+async function read(image,{signal,onProgress,face}){
+ if(signal?.aborted)throw new DOMException('Lectura cancelada','AbortError');
+ const preparedImage=face==='back'?image:await prepareINEImage(image);
  if(signal?.aborted)throw new DOMException('Lectura cancelada','AbortError');
  const {default:Tesseract}=await import('/vendor/ocr/tesseract.esm.min.js');
  let worker,timer,rejectAbort;let cancelled=false;
@@ -24,7 +28,13 @@ async function read(image,{signal,onProgress}){
   await Promise.race([initialization,timeout,interrupted]);
   if(cancelled||signal?.aborted)throw new DOMException('Lectura cancelada','AbortError');
   await worker.setParameters({tessedit_pageseg_mode:'11'});
-  const result=await Promise.race([worker.recognize(image),timeout,interrupted]);
+  let result=await Promise.race([worker.recognize(preparedImage,{rotateAuto:face!=='back'},{text:true}),timeout,interrupted]);
+  const quality=data=>Object.values(extractINEFields(data.text,{face})).filter(Boolean).length*40+data.confidence;
+  if(result.data.confidence<70||!Object.values(extractINEFields(result.data.text,{face})).some(Boolean)){
+   await worker.setParameters({tessedit_pageseg_mode:'6'});
+   const alternative=await Promise.race([worker.recognize(preparedImage,{rotateAuto:face!=='back'},{text:true}),timeout,interrupted]);
+   if(quality(alternative.data)>quality(result.data))result=alternative;
+  }
   if(signal?.aborted)throw new DOMException('Lectura cancelada','AbortError');
   return {text:result.data.text,confidence:result.data.confidence};
  }finally{cancelled=true;clearTimeout(timer);signal?.removeEventListener('abort',abort);if(worker)await worker.terminate();}

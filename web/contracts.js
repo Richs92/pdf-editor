@@ -1,8 +1,9 @@
 import {authorize,recordEvent} from './session.js';
 await authorize('contracts');
 import {generateContractPDF} from './contract-pdf.js';
+import {cropINEPhoto} from './ine-crop.js';
 import {recognizeINE} from './ine-ocr.js';
-import {extractINEFields,ineTargetFields} from './ine-fields.js';
+import {extractINEFields,ineTargetFields,ineFieldSelection} from './ine-fields.js';
 import {formatPagareInput,pagareAmount} from './pagare-amount.js';
 import {supportsPDFSharing,sharePDF} from './share-document.js';
 import {generateWord} from './word-generator.js';
@@ -65,7 +66,7 @@ async function readPhoto(file){
     const canvas=document.createElement('canvas');canvas.width=Math.round(img.naturalWidth*scale);canvas.height=Math.round(img.naturalHeight*scale);
     const context=canvas.getContext('2d');context.fillStyle='white';context.fillRect(0,0,canvas.width,canvas.height);context.drawImage(img,0,0,canvas.width,canvas.height);
     const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',.88));if(!blob)throw Error('No se pudo convertir la imagen.');
-    return {bytes:new Uint8Array(await blob.arrayBuffer()),width:canvas.width,height:canvas.height,preview:URL.createObjectURL(blob)};
+    return {bytes:new Uint8Array(await blob.arrayBuffer()),width:canvas.width,height:canvas.height,preview:URL.createObjectURL(blob),source:file,needsCrop:img.naturalWidth/img.naturalHeight<1.2||img.naturalWidth/img.naturalHeight>2.1};
   }catch(error){if(error.message.includes('15 MB'))throw error;throw Error('No se pudo leer la imagen. Prueba con una foto JPG o PNG.');}finally{URL.revokeObjectURL(url);}
 }
 function buildPhotoCards(){
@@ -77,11 +78,15 @@ function buildPhotoCards(){
    const label=document.createElement('label');label.textContent=camera?'Tomar foto':'Subir imagen';const input=document.createElement('input');input.type='file';input.accept='image/*';input.hidden=true;input.setAttribute('aria-label',(camera?'Tomar foto: ':'Subir imagen: ')+slot.label);if(camera)input.capture='environment';label.append(input);
    input.addEventListener('change',async()=>{
     if(!input.files[0])return;label.style.opacity='.5';status.textContent='Procesando imagen…';
-    try{const photo=await readPhoto(input.files[0]);const previous=photoData.get(key);if(previous){previous.ocr?.controller?.abort();URL.revokeObjectURL(previous.preview);}photoData.set(key,photo);if(current.id===documentId){markDirty();buildPhotoCards();status.textContent='INE añadida. Revisa sus datos; la vista previa incluirá el anexo automáticamente.';}void scanPhoto(documentId,slot,photo);}catch(error){status.textContent=error.message;}finally{label.style.opacity='1';input.value='';}
+    try{let photo=await readPhoto(input.files[0]);if(photo.needsCrop){const cropped=await cropINEPhoto(input.files[0]);if(!cropped){URL.revokeObjectURL(photo.preview);status.textContent='Foto cancelada.';return;}if(cropped!==input.files[0]){const source=input.files[0];URL.revokeObjectURL(photo.preview);photo=await readPhoto(cropped);photo.source=source;photo.ocrSource=cropped;}}const previous=photoData.get(key);if(previous){previous.ocr?.controller?.abort();URL.revokeObjectURL(previous.preview);}photoData.set(key,photo);if(current.id===documentId){markDirty();buildPhotoCards();status.textContent='INE añadida. Revisa sus datos; la vista previa incluirá el anexo automáticamente.';}void scanPhoto(documentId,slot,photo);}catch(error){status.textContent=error.message;}finally{label.style.opacity='1';input.value='';}
    });controls.append(label);
   }
   const photo=photoData.get(key);
-  if(photo){const remove=document.createElement('button');remove.type='button';remove.textContent='Quitar foto';remove.addEventListener('click',()=>{photo.ocr?.controller?.abort();URL.revokeObjectURL(photo.preview);photoData.delete(key);markDirty();buildPhotoCards();});controls.append(remove);}
+  if(photo){const crop=document.createElement('button');crop.type='button';crop.textContent='Recortar INE';crop.addEventListener('click',async()=>{
+   try{photo.ocr?.controller?.abort();const cropped=await cropINEPhoto(photo.source);if(!cropped){if(photo.ocr?.state==='reading'){photo.ocr=null;buildPhotoCards();}return;}
+   if(photoData.get(key)!==photo)return;
+   const replacement=await readPhoto(cropped);replacement.source=photo.source;replacement.ocrSource=cropped;URL.revokeObjectURL(photo.preview);photoData.set(key,replacement);if(current.id===documentId){markDirty();buildPhotoCards();}void scanPhoto(documentId,slot,replacement);}catch{status.textContent='No se pudo recortar la foto. Inténtalo de nuevo o sube otra imagen.';}
+  });controls.append(crop);const remove=document.createElement('button');remove.type='button';remove.textContent='Quitar foto';remove.addEventListener('click',()=>{photo.ocr?.controller?.abort();URL.revokeObjectURL(photo.preview);photoData.delete(key);markDirty();buildPhotoCards();});controls.append(remove);}
   card.append(controls);if(photo){const img=document.createElement('img');img.src=photo.preview;img.alt=slot.label;card.append(img);buildOCRReview(card,documentId,slot,photo);}area.append(card);
  }
 }
@@ -91,9 +96,9 @@ async function scanPhoto(documentId,slot,photo){
  const visible=()=>current.id===documentId&&photoData.get(documentId+'-'+slot.key)===photo;
  if(visible())buildPhotoCards();
  try{
-  const result=await recognizeINE(photo.preview,{signal:controller.signal,onProgress:message=>{photo.ocr.message=message;if(visible()){const node=document.querySelector(`[data-ocr-status="${slot.key}"]`);if(node)node.textContent=message;}}});
+  const result=await recognizeINE(photo.ocrSource||photo.source||photo.preview,{signal:controller.signal,face:slot.key.endsWith('-back')?'back':'front',onProgress:message=>{photo.ocr.message=message;if(visible()){const node=document.querySelector(`[data-ocr-status="${slot.key}"]`);if(node)node.textContent=message;}}});
   if(controller.signal.aborted)return;
-  const values=extractINEFields(result.text,{face:slot.key.endsWith('-back')?'back':'front'});photo.ocr={state:'ready',values,selected:Object.fromEntries(Object.entries(values).map(([key,value])=>[key,Boolean(value)])),confidence:result.confidence};
+  const values=extractINEFields(result.text,{face:slot.key.endsWith('-back')?'back':'front'});photo.ocr={state:'ready',values,selected:ineFieldSelection(values,{text:result.text,confidence:result.confidence,needsCrop:photo.needsCrop}),confidence:result.confidence};
  }catch(error){if(controller.signal.aborted)return;photo.ocr={state:'error',message:error.message||'No se pudo leer la INE. Puedes volver a intentar o llenar el formulario manualmente.'};}
  if(visible())buildPhotoCards();
 }
@@ -104,13 +109,13 @@ function buildOCRReview(card,documentId,slot,photo){
  if(!ocr){message.textContent='El reverso permite detectar el CIC o el número OCR, si se leen claramente.';return;}
  if(ocr.state==='reading'){message.textContent=ocr.message;return;}
  if(ocr.state==='error'){message.textContent='No se pudo completar la lectura. La foto sigue adjunta; puedes llenar el formulario manualmente o volver a intentar.';return;}
- message.textContent=Object.values(ocr.values).some(Boolean)?'Revisa y corrige los datos antes de aplicarlos. '+(ocr.confidence<65?'La lectura tiene baja confianza; compárala con la foto.':''):'No se detectaron datos con claridad. Puedes escribirlos aquí o probar otra foto.';
+ message.textContent=photo.needsCrop?'La foto incluye demasiado fondo o está de lado. Usa Recortar INE antes de aplicar los datos.':Object.values(ocr.values).some(Boolean)?'Revisa y corrige los datos antes de aplicarlos. '+(ocr.confidence<80?'La lectura tiene baja confianza; compárala con la foto.':''):'No se detectaron datos con claridad. Puedes escribirlos aquí o probar otra foto.';
  const targets=ineTargetFields(documentId,slot.key.split('-')[0]);
  for(const [key,label]of Object.entries({name:'Nombre detectado',address:'Domicilio detectado',identification:'Identificación detectada'})){
   if(!targets[key]||slot.key.endsWith('-front')&&key==='identification'||slot.key.endsWith('-back')&&key!=='identification')continue;
   const field=document.createElement('div');field.className='field';const id='ocr-'+slot.key+'-'+key;
   const title=document.createElement('label');title.htmlFor=id;title.textContent=label;
-  const input=document.createElement(key==='address'?'textarea':'input');input.id=id;input.value=ocr.values[key];input.maxLength=4000;input.dataset.ocrField=key;
+  const input=document.createElement(key==='address'?'textarea':'input');input.id=id;input.value=ocr.values[key];input.maxLength=4000;input.dataset.ocrField=key;input.placeholder='No detectado con claridad; escríbelo o recorta la foto';
   input.addEventListener('input',()=>{ocr.values[key]=input.value;});
   const selectLabel=document.createElement('label');selectLabel.className='ocr-check';const check=document.createElement('input');check.type='checkbox';check.checked=ocr.selected[key];check.setAttribute('aria-label','Usar '+label.toLowerCase());check.addEventListener('change',()=>ocr.selected[key]=check.checked);selectLabel.append(check,document.createTextNode('Usar este dato'));
   field.append(title,input,selectLabel);area.append(field);

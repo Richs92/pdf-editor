@@ -19,34 +19,36 @@ try{
  const sellerPhoto=await photo('ANA MARIA'),buyerPhoto=await photo('LUIS PEDRO');
  const attach=async(label,buffer,face='Frente')=>page.getByLabel('Subir imagen: '+label+' · '+face+' de INE',{exact:true}).setInputFiles({name:'ine-sintetica.png',mimeType:'image/png',buffer});
  const review=(side,face='front')=>page.locator(`[data-ocr-slot="${side}-${face}"]`);
+ const selectDetected=async(side,face='front')=>{for(const check of await review(side,face).getByRole('checkbox').all())await check.check();};
  await attach('Vendedor',sellerPhoto);await review('seller').getByRole('button',{name:'Aplicar datos revisados'}).waitFor({timeout:120000});
  assert.equal(await page.locator('#field-seller').inputValue(),'','OCR must wait for review');
  assert.match(await review('seller').locator('[data-ocr-field="name"]').inputValue(),/PEREZ GARCIA ANA MARIA/);
  assert.match(await review('seller').locator('[data-ocr-field="address"]').inputValue(),/CALLE ROBLE 123/);
  await review('seller').locator('[data-ocr-field="name"]').fill('ANA MARIA PEREZ GARCIA');
- await review('seller').getByRole('button',{name:'Aplicar datos revisados'}).click();assert.equal(await page.locator('#field-seller').inputValue(),'ANA MARIA PEREZ GARCIA');assert.match(await page.locator('#field-sellerAddress').inputValue(),/CALLE ROBLE 123, COL CENTRO 80000, CULIACAN/);
+ await selectDetected('seller','front');await review('seller').getByRole('button',{name:'Aplicar datos revisados'}).click();assert.equal(await page.locator('#field-seller').inputValue(),'ANA MARIA PEREZ GARCIA');assert.match(await page.locator('#field-sellerAddress').inputValue(),/CALLE ROBLE 123, COL CENTRO 80000, CULIACAN/);
  await page.waitForFunction(()=>document.querySelector('#document-preview').textContent.includes('ANA MARIA PEREZ GARCIA')&&document.querySelector('#preview-state').textContent==='Vista previa actualizada');
  await attach('Vendedor',await photo('CIC: 123456789'),'Reverso');
  await review('seller','back').getByRole('button',{name:'Aplicar datos revisados'}).waitFor({timeout:120000});
- await review('seller','back').getByRole('button',{name:'Aplicar datos revisados'}).click();assert.equal(await page.locator('#field-sellerId').inputValue(),'INE, CIC: 123456789');
+ assert.equal(await review('seller','back').locator('[data-ocr-field="identification"]').inputValue(),'INE, CIC: 123456789');
+ await selectDetected('seller','back');await review('seller','back').getByRole('button',{name:'Aplicar datos revisados'}).click();assert.equal(await page.locator('#field-sellerId').inputValue(),'INE, CIC: 123456789');
  await attach('Comprador',buyerPhoto);await review('buyer').getByRole('button',{name:'Aplicar datos revisados'}).waitFor({timeout:120000});
 
- await review('buyer').getByRole('button',{name:'Aplicar datos revisados'}).click();assert.match(await page.locator('#field-buyer').inputValue(),/PEREZ GARCIA LUIS PEDRO/);assert.equal(await page.locator('#field-buyerId').inputValue(),'');assert.equal(await page.locator('#field-seller').inputValue(),'ANA MARIA PEREZ GARCIA');
+ await selectDetected('buyer','front');await review('buyer').getByRole('button',{name:'Aplicar datos revisados'}).click();assert.match(await page.locator('#field-buyer').inputValue(),/PEREZ GARCIA LUIS PEDRO/);assert.equal(await page.locator('#field-buyerId').inputValue(),'');assert.equal(await page.locator('#field-seller').inputValue(),'ANA MARIA PEREZ GARCIA');
  // Replacing data already entered needs an explicit confirmation.
  await page.getByText('Personas',{exact:true}).click();
  await page.locator('#field-buyer').fill('COMPRADOR ESCRITO MANUALMENTE');
- page.once('dialog',dialog=>dialog.dismiss());await review('buyer').getByRole('button',{name:'Aplicar datos revisados'}).click();assert.equal(await page.locator('#field-buyer').inputValue(),'COMPRADOR ESCRITO MANUALMENTE');
- page.once('dialog',dialog=>dialog.accept());await review('buyer').getByRole('button',{name:'Aplicar datos revisados'}).click();assert.match(await page.locator('#field-buyer').inputValue(),/LUIS PEDRO/);
+ page.once('dialog',dialog=>dialog.dismiss());await selectDetected('buyer','front');await review('buyer').getByRole('button',{name:'Aplicar datos revisados'}).click();assert.equal(await page.locator('#field-buyer').inputValue(),'COMPRADOR ESCRITO MANUALMENTE');
+ page.once('dialog',dialog=>dialog.accept());await selectDetected('buyer','front');await review('buyer').getByRole('button',{name:'Aplicar datos revisados'}).click();assert.match(await page.locator('#field-buyer').inputValue(),/LUIS PEDRO/);
  await attach('Comprador',await photo('CIC: 987654321'),'Reverso');
  await review('buyer','back').getByRole('button',{name:'Aplicar datos revisados'}).waitFor({timeout:120000});
- await review('buyer','back').getByRole('button',{name:'Aplicar datos revisados'}).click();assert.equal(await page.locator('#field-buyerId').inputValue(),'INE, CIC: 987654321');
+ await selectDetected('buyer','back');await review('buyer','back').getByRole('button',{name:'Aplicar datos revisados'}).click();assert.equal(await page.locator('#field-buyerId').inputValue(),'INE, CIC: 987654321');
  await page.getByRole('button',{name:'Actualizar vista previa',exact:true}).click();await page.locator('#exports').waitFor({state:'visible',timeout:60000});
  const pending=page.waitForEvent('download');await page.locator('#word-download').click();await mkdir('artifacts/ine',{recursive:true});await(await pending).saveAs('artifacts/ine/contrato-ine.docx');
  const zip=new PizZip(await readFile('artifacts/ine/contrato-ine.docx'));const xml=zip.file('word/document.xml').asText();assert.ok(xml.includes('ANA MARIA PEREZ GARCIA'));assert.ok(xml.includes('PEREZ GARCIA LUIS PEDRO'));assert.equal(Object.keys(zip.files).filter(name=>name.includes('terminavit-ine-')).length,4);assert.equal((xml.match(/TerminavitINE/g)||[]).length,2);
  const pdfDownload=page.waitForEvent('download',{timeout:90000});await page.locator('#pdf-download').click();await(await pdfDownload).saveAs('artifacts/ine/contrato-ine.pdf');
  // An upload to a different document must never reuse a previous person's OCR result.
  await page.locator('.tab[data-group="Pagaré"]').click();await attach('Suscriptor',sellerPhoto);await review('seller').getByRole('button',{name:'Aplicar datos revisados'}).waitFor({timeout:120000});
- await review('seller').getByRole('button',{name:'Aplicar datos revisados'}).click();assert.match(await page.locator('#field-subscriber').inputValue(),/ANA MARIA/);assert.equal(await page.locator('#field-beneficiary').inputValue(),'TERMINAVIT');
+ await selectDetected('seller','front');await review('seller').getByRole('button',{name:'Aplicar datos revisados'}).click();assert.match(await page.locator('#field-subscriber').inputValue(),/ANA MARIA/);assert.equal(await page.locator('#field-beneficiary').inputValue(),'TERMINAVIT');
  // OCR failure must leave the attachment and manual form usable.
  await page.context().route('**/vendor/ocr/spa.traineddata.gz',route=>route.abort());
  await attach('Beneficiario',buyerPhoto);

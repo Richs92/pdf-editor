@@ -18,7 +18,8 @@
     "test:recovery": "node tests/browser/recovery.mjs",
     "test:ine": "node tests/browser/ine.mjs",
     "test:contract-preview": "node tests/browser/contract-preview.mjs",
-    "test:share": "node tests/browser/share.mjs"
+    "test:share": "node tests/browser/share.mjs",
+    "test:ine-crop": "node tests/browser/ine-crop.mjs"
   },
   "dependencies": {
     "@pdf-lib/fontkit": "1.1.1",
