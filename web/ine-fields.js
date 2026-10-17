@@ -1,5 +1,5 @@
 const clean=value=>value.replace(/\s+/g,' ').trim();
-export function extractINEFields(text) {
+export function extractINEFields(text,{face='front'}={}) {
  const lines=String(text??'').normalize('NFC').toUpperCase().split(/\r?\n/).map(clean).filter(Boolean);
  const fields={name:'',address:'',identification:''};
  let section='';const names=[],address=[];
@@ -16,11 +16,17 @@ export function extractINEFields(text) {
  }
  fields.name=names.join(' ');fields.address=address.join('\n');
  const joined=lines.join('\n');
- // Keep the identification type explicit; CURP is never treated as a credential number.
- const elector=joined.match(/CLAVE\s+DE\s+ELECTOR\s*:?\s*([A-Z0-9]{18})(?![A-Z0-9])/);
- const cic=joined.match(/\bCIC\s*:?\s*(\d{9})(?!\d)/);
- if(elector)fields.identification='CREDENCIAL PARA VOTAR (INE), CLAVE DE ELECTOR: '+elector[1];
- else if(cic)fields.identification='CREDENCIAL PARA VOTAR (INE), CIC: '+cic[1];
+ // The credential number comes from the back, never from CURP or the voter key.
+ if(face==='back'){
+  fields.name='';fields.address='';
+  const cic=joined.match(/\bCIC\s*:?\s*(\d{9})(?!\d)/);
+  // The first nine digits after IDMEX are CIC; the tenth is its check digit.
+  const mrz=joined.match(/\bIDMEX\s*(\d{9})\d(?=[<\s]|$)/);
+  const ocr=joined.match(/\bOCR\s*:?\s*(\d{13})(?!\d)/);
+  if(cic||mrz)fields.identification='INE, CIC: '+(cic||mrz)[1];
+  else if(ocr)fields.identification='INE, OCR: '+ocr[1];
+ }
+
  return fields;
 }
 export function ineTargetFields(documentId,side){

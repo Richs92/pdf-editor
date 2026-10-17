@@ -87,6 +87,7 @@ export async function generateContractPDF(bytes){
   const grid=child(tableNode,'tblGrid');let sizes=grid?children(grid,'gridCol').map(col=>Number(val(col,'w')||1)):[];
   if(sizes.length!==columns)sizes=Array(columns).fill(1);const total=sizes.reduce((a,b)=>a+b,0);
   const item={table:{headerRows:sourceRows.findIndex(tr=>!enabled(child(child(tr,'trPr'),'tblHeader'))) < 0 ? sourceRows.length : sourceRows.findIndex(tr=>!enabled(child(child(tr,'trPr'),'tblHeader'))),widths:sizes.map(n=>(contentWidth-columns*10)*n/total),body:rows,dontBreakRows:false},layout:{hLineWidth:()=>.5,vLineWidth:()=>.5,hLineColor:()=> '#9ca9af',vLineColor:()=> '#9ca9af',paddingLeft:()=>4,paddingRight:()=>4,paddingTop:()=>4,paddingBottom:()=>4},margin:[0,4,0,8]};
+  if(val(child(child(tableNode,'tblPr'),'tblCaption'))==='TerminavitINE'){item.layout='noBorders';item.table.dontBreakRows=true;}
   if(pendingBreak){item.pageBreak='before';pendingBreak=false;}return item;
  }
  const content=[];

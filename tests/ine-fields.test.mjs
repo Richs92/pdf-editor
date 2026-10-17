@@ -20,12 +20,12 @@ test('INE: extrae solo los datos rotulados, sin mezclar sexo, CURP ni vigencia',
  assert.equal(result.name,'PEREZ GARCIA ANA MARIA');
  assert.equal(extractINEFields(front.replace('NOMBRE\n','NOMBRE SEXO M\n')).name,'PEREZ GARCIA ANA MARIA');
  assert.equal(result.address,'CALLE ROBLE 123\nCOL CENTRO 80000\nCULIACAN, SIN.');
- assert.equal(result.identification,'CREDENCIAL PARA VOTAR (INE), CLAVE DE ELECTOR: PRGRAN90010125M100');
+ assert.equal(result.identification,'');
  assert.deepEqual(extractINEFields('FOTO BORROSA\n123456789\nCURP PEGX900101MXXAAA00'),{name:'',address:'',identification:''});
 });
 test('INE: etiquetas en una línea, CIC explícito y datos incompletos',()=>{
  assert.deepEqual(extractINEFields('N0MBRE: ANA PEREZ\nDOMICILI0: CALLE 5\nVIGENCIA 2035'),{name:'ANA PEREZ',address:'CALLE 5',identification:''});
- assert.equal(extractINEFields('CIC: 123456789\nOCR 987654321').identification,'CREDENCIAL PARA VOTAR (INE), CIC: 123456789');
+ assert.equal(extractINEFields('CIC: 123456789\nOCR 987654321',{face:'back'}).identification,'INE, CIC: 123456789');
  assert.equal(extractINEFields('OCR 987654321').identification,'');
 });
 test('INE: vendedor y comprador se asignan a su persona en los siete documentos',()=>{
@@ -35,4 +35,10 @@ test('INE: vendedor y comprador se asignan a su persona en los siete documentos'
  }
  assert.deepEqual(ineTargetFields('pagare','seller'),{name:'subscriber',address:'subscriberAddress'});
  assert.deepEqual(ineTargetFields('pagare','buyer'),{name:'beneficiary',address:'beneficiaryAddress'});
+});
+
+test('reverso: CIC desde MRZ, sin incluir dígito verificador; OCR solo cuando está rotulado',()=>{
+ assert.equal(extractINEFields('IDMEX1234567890<<1234567890123',{face:'back'}).identification,'INE, CIC: 123456789');
+ assert.equal(extractINEFields('OCR: 1234567890123',{face:'back'}).identification,'INE, OCR: 1234567890123');
+ assert.equal(extractINEFields('CLAVE DE ELECTOR PRGRAN90010125M100\nCURP PEGX900101MXXAAA00',{face:'back'}).identification,'');
 });

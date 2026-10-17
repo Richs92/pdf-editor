@@ -34,7 +34,7 @@ function selectDocument(item){
     const wrapper=document.createElement('div');wrapper.className='field';const label=document.createElement('label');label.htmlFor='field-'+field.key;label.textContent=field.label;
     const input=document.createElement(field.type==='textarea'?'textarea':'input');input.id=label.htmlFor;input.name=field.key;input.placeholder='Opcional · se deja una línea si está vacío';input.maxLength=4000;
     if(field.type==='number'){input.type='number';input.min='0';input.step='1';input.inputMode='numeric';}
-    input.value=drafts.get(item.id)?.[field.key]??field.default;wrapper.append(label,input);groups.get(field.group).append(wrapper);
+    input.value=drafts.get(item.id)?.[field.key]??field.default;wrapper.append(label,input);if(['sellerId','buyerId'].includes(field.key)){const hint=document.createElement('p');hint.className='hint';hint.textContent='Tipo INE y número del reverso (CIC u OCR). Revisa el dato detectado antes de aplicarlo.';wrapper.append(hint);}groups.get(field.group).append(wrapper);
   }
   buildPhotoCards();$('#exports').hidden=true;status.textContent='Llena los datos que tengas y prepara tu documento. Los campos vacíos se convertirán en líneas para escribir a mano.';
   $('#document-preview').replaceChildren();const empty=document.createElement('div');empty.className='empty';empty.textContent='Llena los datos disponibles y pulsa “Preparar documento”. Puedes dejar campos vacíos.';$('#document-preview').append(empty);
@@ -62,7 +62,7 @@ function buildPhotoCards(){
    const label=document.createElement('label');label.textContent=camera?'Tomar foto':'Subir imagen';const input=document.createElement('input');input.type='file';input.accept='image/*';input.hidden=true;input.setAttribute('aria-label',(camera?'Tomar foto: ':'Subir imagen: ')+slot.label);if(camera)input.capture='environment';label.append(input);
    input.addEventListener('change',async()=>{
     if(!input.files[0])return;label.style.opacity='.5';status.textContent='Procesando imagen…';
-    try{const photo=await readPhoto(input.files[0]);const previous=photoData.get(key);if(previous){previous.ocr?.controller?.abort();URL.revokeObjectURL(previous.preview);}photoData.set(key,photo);if(current.id===documentId){markDirty();buildPhotoCards();status.textContent='INE añadida. Puedes revisar sus datos y preparar el documento con el anexo.';}if(slot.key.endsWith('-front'))void scanPhoto(documentId,slot,photo);}catch(error){status.textContent=error.message;}finally{label.style.opacity='1';input.value='';}
+    try{const photo=await readPhoto(input.files[0]);const previous=photoData.get(key);if(previous){previous.ocr?.controller?.abort();URL.revokeObjectURL(previous.preview);}photoData.set(key,photo);if(current.id===documentId){markDirty();buildPhotoCards();status.textContent='INE añadida. Puedes revisar sus datos y preparar el documento con el anexo.';}void scanPhoto(documentId,slot,photo);}catch(error){status.textContent=error.message;}finally{label.style.opacity='1';input.value='';}
    });controls.append(label);
   }
   const photo=photoData.get(key);
@@ -78,7 +78,7 @@ async function scanPhoto(documentId,slot,photo){
  try{
   const result=await recognizeINE(photo.preview,{signal:controller.signal,onProgress:message=>{photo.ocr.message=message;if(visible()){const node=document.querySelector(`[data-ocr-status="${slot.key}"]`);if(node)node.textContent=message;}}});
   if(controller.signal.aborted)return;
-  const values=extractINEFields(result.text);photo.ocr={state:'ready',values,selected:Object.fromEntries(Object.entries(values).map(([key,value])=>[key,Boolean(value)])),confidence:result.confidence};
+  const values=extractINEFields(result.text,{face:slot.key.endsWith('-back')?'back':'front'});photo.ocr={state:'ready',values,selected:Object.fromEntries(Object.entries(values).map(([key,value])=>[key,Boolean(value)])),confidence:result.confidence};
  }catch(error){if(controller.signal.aborted)return;photo.ocr={state:'error',message:error.message||'No se pudo leer la INE. Puedes volver a intentar o llenar el formulario manualmente.'};}
  if(visible())buildPhotoCards();
 }
@@ -86,13 +86,13 @@ function buildOCRReview(card,documentId,slot,photo){
  const ocr=photo.ocr,area=document.createElement('div');area.className='ocr-review';area.dataset.ocrSlot=slot.key;card.append(area);
  const message=document.createElement('p');message.className='hint';message.setAttribute('role','status');message.dataset.ocrStatus=slot.key;area.append(message);
  const read=document.createElement('button');read.type='button';read.className='secondary';read.textContent=ocr?'Volver a leer INE':'Leer datos de INE';read.disabled=ocr?.state==='reading';read.addEventListener('click',()=>scanPhoto(documentId,slot,photo));area.append(read);
- if(!ocr){message.textContent='Puedes leer esta cara para detectar los datos de identificación.';return;}
+ if(!ocr){message.textContent='El reverso permite detectar el CIC o el número OCR, si se leen claramente.';return;}
  if(ocr.state==='reading'){message.textContent=ocr.message;return;}
  if(ocr.state==='error'){message.textContent='No se pudo completar la lectura. La foto sigue adjunta; puedes llenar el formulario manualmente o volver a intentar.';return;}
  message.textContent=Object.values(ocr.values).some(Boolean)?'Revisa y corrige los datos antes de aplicarlos. '+(ocr.confidence<65?'La lectura tiene baja confianza; compárala con la foto.':''):'No se detectaron datos con claridad. Puedes escribirlos aquí o probar otra foto.';
  const targets=ineTargetFields(documentId,slot.key.split('-')[0]);
  for(const [key,label]of Object.entries({name:'Nombre detectado',address:'Domicilio detectado',identification:'Identificación detectada'})){
-  if(!targets[key])continue;
+  if(!targets[key]||slot.key.endsWith('-front')&&key==='identification'||slot.key.endsWith('-back')&&key!=='identification')continue;
   const field=document.createElement('div');field.className='field';const id='ocr-'+slot.key+'-'+key;
   const title=document.createElement('label');title.htmlFor=id;title.textContent=label;
   const input=document.createElement(key==='address'?'textarea':'input');input.id=id;input.value=ocr.values[key];input.maxLength=4000;input.dataset.ocrField=key;
@@ -134,7 +134,7 @@ form.addEventListener('submit',async event=>{
  event.preventDefault();if(busy)return;lock(true);status.textContent='Preparando el documento y sus anexos…';const version=sourceVersion;
  try{
   const item=current;let template=templates.get(item.id);if(!template){const response=await fetch('./'+item.template);if(!response.ok)throw Error('No se pudo cargar la plantilla.');template=new Uint8Array(await response.arrayBuffer());templates.set(item.id,template);}
-  const photos=photoSlots().flatMap(slot=>{const photo=photoData.get(photoKey(slot.key));return photo?[{...photo,label:slot.label}]:[];});
+  const photos=photoSlots().flatMap(slot=>{const photo=photoData.get(photoKey(slot.key));return photo?[{...photo,label:slot.label,person:slot.key.split('-')[0],face:slot.key.split('-')[1]}]:[];});
   const bytes=await generateWord(template,item,getValues(),photos);
   await recordEvent('contracts','document_generated',{documentId:item.id});
   await renderDocument(bytes);

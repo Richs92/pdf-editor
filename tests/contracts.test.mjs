@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {validateContract} from '../web/word-generator.js';
+import {validateContract,groupINEPhotos} from '../web/word-generator.js';
 const catalog=JSON.parse(await readFile(new URL('../web/contracts-catalog.json',import.meta.url),'utf8'));
 test('las siete plantillas permiten dejar todos los datos pendientes como líneas imprimibles',()=>{
  assert.equal(catalog.length,7);
@@ -17,4 +17,12 @@ test('datos parciales: conserva lo escrito, incluyendo cero, y deja líneas solo
  assert.equal(values.name,'ANA PÉREZ');assert.equal(values.days,'0');assert.match(values.address,/^_+$/);assert.match(values.emptyNumber,/^_+$/);
  assert.throws(()=>validateContract(item,{days:'dos'}),/número entero/);
  assert.throws(()=>validateContract(item,{name:'x'.repeat(4001)}),/Revisa/);
+});
+
+test('anexos: una hoja por persona, frente antes del reverso aunque se suban en otro orden',()=>{
+ const photos=[{person:'buyer',face:'back'},{person:'seller',face:'back'},{person:'buyer',face:'front'},{person:'seller',face:'front'}];
+ const groups=groupINEPhotos(photos,'ratificado-soltero');
+ assert.deepEqual(groups.map(group=>group.title),['Vendedor','Comprador']);
+ for(const group of groups)assert.deepEqual(group.photos.map(photo=>photo.face),['front','back']);
+ assert.equal(groupINEPhotos([{person:'seller',face:'back'}],'pagare')[0].title,'Suscriptor');
 });

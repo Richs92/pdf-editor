@@ -35,7 +35,21 @@ for item in json.loads(Path('web/contracts-catalog.json').read_text()):
                 if repeats>0:actual.subtract(Counter({k:v*repeats for k,v in Counter(heading).items()}))
             assert expected==actual,(item['id'],expected-actual,actual-expected)
             assert all(page.get_text().strip() or page.get_images() for page in pdf),'Página vacía'
-            assert sum(bool(page.get_images()) for page in pdf)==len(photos),(item['id'],'Anexos incompletos')
+            assert sum(len(page.get_image_info()) for page in pdf)==len(photos),(item['id'],'Anexos incompletos')
+            assert sum(bool(page.get_images()) for page in pdf)==(2 if len(photos)==4 else len(photos)),(item['id'],'Las caras no están agrupadas por persona')
+            if len(photos)==4:
+                annex=[page for page in pdf if page.get_image_info()]
+                for role,page in zip(['Vendedor','Comprador'],annex):
+                    images=page.get_image_info()
+                    assert len(images)==2,(item['id'],role,'Falta una cara')
+                    assert images[0]['bbox'][3]<images[1]['bbox'][1],(item['id'],'Imágenes superpuestas')
+                    assert role in page.get_text()
+                    assert page.get_text().index('Frente de INE')<page.get_text().index('Reverso de INE')
+                groups=[table for table in root.findall('.//w:tbl',NS) if table.find('w:tblPr/w:tblCaption',NS) is not None and table.find('w:tblPr/w:tblCaption',NS).get(W+'val')=='TerminavitINE']
+                assert len(groups)==2,(item['id'],'Una hoja por persona')
+                for table in groups:
+                    assert table.find('w:tr/w:trPr/w:cantSplit',NS) is not None
+                    assert len(table.findall('.//w:drawing',NS))==2
             for value in ['PEDRO SUSCRIPTOR DE PRUEBA'] if item['id']=='pagare' else ['ANA PÉREZ GARCÍA','LUIS LÓPEZ RUIZ','INE VENDEDOR 123456789','INE COMPRADOR 987654321']:
                 assert normalized(value) in normalized(text) and normalized(value) in normalized(ptext)
             print(f"{item['id']}: texto completo, {len(pdf)} páginas y {len(photos)} anexos verificados")
