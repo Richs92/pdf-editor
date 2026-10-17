@@ -25,6 +25,7 @@ try{
  assert.match(await review('seller').locator('[data-ocr-field="address"]').inputValue(),/CALLE ROBLE 123/);
  await review('seller').locator('[data-ocr-field="name"]').fill('ANA MARIA PEREZ GARCIA');
  await review('seller').getByRole('button',{name:'Aplicar datos revisados'}).click();assert.equal(await page.locator('#field-seller').inputValue(),'ANA MARIA PEREZ GARCIA');assert.match(await page.locator('#field-sellerAddress').inputValue(),/CALLE ROBLE 123, COL CENTRO 80000, CULIACAN/);
+ await page.waitForFunction(()=>document.querySelector('#document-preview').textContent.includes('ANA MARIA PEREZ GARCIA')&&document.querySelector('#preview-state').textContent==='Vista previa actualizada');
  await attach('Vendedor',await photo('CIC: 123456789'),'Reverso');
  await review('seller','back').getByRole('button',{name:'Aplicar datos revisados'}).waitFor({timeout:120000});
  await review('seller','back').getByRole('button',{name:'Aplicar datos revisados'}).click();assert.equal(await page.locator('#field-sellerId').inputValue(),'INE, CIC: 123456789');
@@ -38,7 +39,7 @@ try{
  await attach('Comprador',await photo('CIC: 987654321'),'Reverso');
  await review('buyer','back').getByRole('button',{name:'Aplicar datos revisados'}).waitFor({timeout:120000});
  await review('buyer','back').getByRole('button',{name:'Aplicar datos revisados'}).click();assert.equal(await page.locator('#field-buyerId').inputValue(),'INE, CIC: 987654321');
- await page.getByRole('button',{name:'Preparar documento',exact:true}).click();await page.locator('#exports').waitFor({state:'visible',timeout:60000});
+ await page.getByRole('button',{name:'Actualizar vista previa',exact:true}).click();await page.locator('#exports').waitFor({state:'visible',timeout:60000});
  const pending=page.waitForEvent('download');await page.locator('#word-download').click();await mkdir('artifacts/ine',{recursive:true});await(await pending).saveAs('artifacts/ine/contrato-ine.docx');
  const zip=new PizZip(await readFile('artifacts/ine/contrato-ine.docx'));const xml=zip.file('word/document.xml').asText();assert.ok(xml.includes('ANA MARIA PEREZ GARCIA'));assert.ok(xml.includes('PEREZ GARCIA LUIS PEDRO'));assert.equal(Object.keys(zip.files).filter(name=>name.includes('terminavit-ine-')).length,4);assert.equal((xml.match(/TerminavitINE/g)||[]).length,2);
  const pdfDownload=page.waitForEvent('download',{timeout:90000});await page.locator('#pdf-download').click();await(await pdfDownload).saveAs('artifacts/ine/contrato-ine.pdf');

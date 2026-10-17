@@ -16,7 +16,8 @@
     "test:cfe": "node tests/browser/cfe.mjs",
     "test:access": "node --test tests/access.test.mjs tests/schema.test.mjs",
     "test:recovery": "node tests/browser/recovery.mjs",
-    "test:ine": "node tests/browser/ine.mjs"
+    "test:ine": "node tests/browser/ine.mjs",
+    "test:contract-preview": "node tests/browser/contract-preview.mjs"
   },
   "dependencies": {
     "@pdf-lib/fontkit": "1.1.1",

@@ -32,7 +32,7 @@ const sample={seller:'ANA PÉREZ GARCÍA',buyer:'LUIS LÓPEZ RUIZ',sellerId:'INE
     }
    }
   }
-  await page.getByRole('button',{name:'Preparar documento',exact:true}).click();
+  await page.getByRole('button',{name:'Actualizar vista previa',exact:true}).click();
   await page.locator('#exports').waitFor({state:'visible',timeout:60000});
   assert.ok((await page.locator('#document-preview').innerText()).includes(item.id==='pagare'?sample.subscriber:sample.seller));
   assert.ok(!(await page.locator('#document-preview').innerText()).includes('{seller}'));
@@ -52,13 +52,13 @@ const sample={seller:'ANA PÉREZ GARCÍA',buyer:'LUIS LÓPEZ RUIZ',sellerId:'INE
   assert.equal(await page.locator('#fields [required]').count(),0);
   await page.evaluate(()=>{for(const el of document.querySelectorAll('#fields input,#fields textarea'))el.value='';document.querySelector('#contract-form').dispatchEvent(new Event('input',{bubbles:true}));});
   assert.equal(await page.locator('#contract-form').evaluate(form=>form.checkValidity()),true);
-  await page.getByRole('button',{name:'Preparar documento',exact:true}).click();await page.locator('#exports').waitFor({state:'visible',timeout:60000});
+  await page.getByRole('button',{name:'Actualizar vista previa',exact:true}).click();await page.locator('#exports').waitFor({state:'visible',timeout:60000});
   const blankPreview=await page.locator('#document-preview').innerText();assert.match(blankPreview,/_{24}/);assert.ok(!/\{[a-zA-Z][a-zA-Z0-9]*\}/.test(blankPreview));
   download=page.waitForEvent('download');await page.locator('#word-download').click();await(await download).saveAs('artifacts/contracts/'+item.id+'-blancos.docx');
   download=page.waitForEvent('download',{timeout:90000});await page.locator('#pdf-download').click();await(await download).saveAs('artifacts/contracts/'+item.id+'-blancos.pdf');
   if(index===0){
    await page.locator('#fields [name="subscriber"]').fill('NOMBRE PARCIAL DE PRUEBA');
-   await page.getByRole('button',{name:'Preparar documento',exact:true}).click();await page.locator('#exports').waitFor({state:'visible',timeout:60000});
+   await page.getByRole('button',{name:'Actualizar vista previa',exact:true}).click();await page.locator('#exports').waitFor({state:'visible',timeout:60000});
    const partial=await page.locator('#document-preview').innerText();assert.ok(partial.includes('NOMBRE PARCIAL DE PRUEBA'));assert.match(partial,/_{24}/);
   }
   console.log(item.id+': datos completos, vacíos con líneas, Word, PDF y vista móvil correctos');
