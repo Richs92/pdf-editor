@@ -5,7 +5,11 @@ export function validateContract(contract, data) {
   const values = {};
   for (const field of contract.fields) {
     const value = String(data[field.key] ?? '').trim();
-    if (!value) throw new Error(`Completa: ${field.label}.`);
+    if (!value) {
+      const length=field.type==='number'?8:({signDay:4,signMonth:12,signYear:6}[field.key]??(field.type==='textarea'?40:24));
+      values[field.key]='_'.repeat(length);
+      continue;
+    }
     if (value.length > 4000 || /[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(value)) throw new Error(`Revisa: ${field.label}.`);
     if (field.type === 'number' && !/^\d+$/.test(value)) throw new Error(`${field.label}: escribe un número entero de días.`);
     values[field.key] = value;

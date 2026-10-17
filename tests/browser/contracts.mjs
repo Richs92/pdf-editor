@@ -48,7 +48,20 @@ const sample={seller:'ANA PÉREZ GARCÍA',buyer:'LUIS LÓPEZ RUIZ',sellerId:'INE
    download=page.waitForEvent('download');await page.locator('#google-download').click();assert.ok((await download).suggestedFilename().endsWith('.docx'));
    await page.screenshot({path:'artifacts/contracts/mobile.png',fullPage:true});
   }
-  console.log(item.id+': formulario, Word, PDF y vista móvil correctos');
+  // Generate the same template with every field cleared, using the real submit button.
+  assert.equal(await page.locator('#fields [required]').count(),0);
+  await page.evaluate(()=>{for(const el of document.querySelectorAll('#fields input,#fields textarea'))el.value='';document.querySelector('#contract-form').dispatchEvent(new Event('input',{bubbles:true}));});
+  assert.equal(await page.locator('#contract-form').evaluate(form=>form.checkValidity()),true);
+  await page.getByRole('button',{name:'Preparar documento',exact:true}).click();await page.locator('#exports').waitFor({state:'visible',timeout:60000});
+  const blankPreview=await page.locator('#document-preview').innerText();assert.match(blankPreview,/_{24}/);assert.ok(!/\{[a-zA-Z][a-zA-Z0-9]*\}/.test(blankPreview));
+  download=page.waitForEvent('download');await page.locator('#word-download').click();await(await download).saveAs('artifacts/contracts/'+item.id+'-blancos.docx');
+  download=page.waitForEvent('download',{timeout:90000});await page.locator('#pdf-download').click();await(await download).saveAs('artifacts/contracts/'+item.id+'-blancos.pdf');
+  if(index===0){
+   await page.locator('#fields [name="subscriber"]').fill('NOMBRE PARCIAL DE PRUEBA');
+   await page.getByRole('button',{name:'Preparar documento',exact:true}).click();await page.locator('#exports').waitFor({state:'visible',timeout:60000});
+   const partial=await page.locator('#document-preview').innerText();assert.ok(partial.includes('NOMBRE PARCIAL DE PRUEBA'));assert.match(partial,/_{24}/);
+  }
+  console.log(item.id+': datos completos, vacíos con líneas, Word, PDF y vista móvil correctos');
  }
  assert.deepEqual(errors,[]);assert.ok(uploads.every(url=>url.includes('/.netlify/functions/api/')), 'Solo se envían autenticación y eventos; no documentos ni imágenes');assert.ok(!JSON.stringify(app.state.logs).includes(sample.seller));
  // Data and pictures remain in memory, never in persistent browser storage.

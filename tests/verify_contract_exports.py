@@ -39,3 +39,18 @@ for item in json.loads(Path('web/contracts-catalog.json').read_text()):
             for value in ['PEDRO SUSCRIPTOR DE PRUEBA'] if item['id']=='pagare' else ['ANA PÉREZ GARCÍA','LUIS LÓPEZ RUIZ','INE VENDEDOR 123456789','INE COMPRADOR 987654321']:
                 assert normalized(value) in normalized(text) and normalized(value) in normalized(ptext)
             print(f"{item['id']}: texto completo, {len(pdf)} páginas y {len(photos)} anexos verificados")
+
+# Empty form exports still contain the template's text and handwriting lines in both formats.
+for item in json.loads(Path('web/contracts-catalog.json').read_text()):
+    base=Path('artifacts/contracts')/(item['id']+'-blancos')
+    with ZipFile(base.with_suffix('.docx')) as archive:
+        root=ET.fromstring(archive.read('word/document.xml'))
+        text=''.join(t.text or '' for t in root.findall('.//w:t',NS))
+        assert not re.search(r'\{[a-zA-Z][a-zA-Z0-9]*\}',text),item['id']
+        assert '_'*24 in text,item['id']
+        with fitz.open(base.with_suffix('.pdf')) as pdf:
+            ptext=''.join(page.get_text() for page in pdf)
+            assert '_'*24 in ptext,item['id']
+            assert text.count('_')==ptext.count('_'),(item['id'],'Líneas incompletas en PDF')
+            assert all(page.get_text().strip() or page.get_images() for page in pdf),'Página vacía'
+        print(item['id']+': líneas para completar a mano verificadas en Word y PDF')

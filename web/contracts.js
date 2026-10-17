@@ -30,12 +30,12 @@ function selectDocument(item){
   for(const field of item.fields){
     if(!groups.has(field.group)){const detail=document.createElement('details');detail.open=true;const summary=document.createElement('summary');summary.textContent=field.group;detail.append(summary);groups.set(field.group,detail);fields.append(detail);}
     const wrapper=document.createElement('div');wrapper.className='field';const label=document.createElement('label');label.htmlFor='field-'+field.key;label.textContent=field.label;
-    const input=document.createElement(field.type==='textarea'?'textarea':'input');input.id=label.htmlFor;input.name=field.key;input.required=true;input.maxLength=4000;
+    const input=document.createElement(field.type==='textarea'?'textarea':'input');input.id=label.htmlFor;input.name=field.key;input.placeholder='Opcional · se deja una línea si está vacío';input.maxLength=4000;
     if(field.type==='number'){input.type='number';input.min='0';input.step='1';input.inputMode='numeric';}
     input.value=drafts.get(item.id)?.[field.key]??field.default;wrapper.append(label,input);groups.get(field.group).append(wrapper);
   }
-  buildPhotoCards();$('#exports').hidden=true;status.textContent='Completa el formulario y prepara tu documento.';
-  $('#document-preview').replaceChildren();const empty=document.createElement('div');empty.className='empty';empty.textContent='Completa el formulario y pulsa “Preparar documento”.';$('#document-preview').append(empty);
+  buildPhotoCards();$('#exports').hidden=true;status.textContent='Llena los datos que tengas y prepara tu documento. Los campos vacíos se convertirán en líneas para escribir a mano.';
+  $('#document-preview').replaceChildren();const empty=document.createElement('div');empty.className='empty';empty.textContent='Llena los datos disponibles y pulsa “Preparar documento”. Puedes dejar campos vacíos.';$('#document-preview').append(empty);
 }
 function photoSlots(){const note=current.id==='pagare';return [{key:'seller-front',label:(note?'Suscriptor':'Vendedor')+' · Frente de INE'},{key:'seller-back',label:(note?'Suscriptor':'Vendedor')+' · Reverso de INE'},{key:'buyer-front',label:(note?'Beneficiario':'Comprador')+' · Frente de INE'},{key:'buyer-back',label:(note?'Beneficiario':'Comprador')+' · Reverso de INE'}];}
 function photoKey(key){return current.id+'-'+key;}
