@@ -4,6 +4,7 @@ const R = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
 const escapeXML = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
 export function validateContract(contract, data) {
   if(contract.id==='pagare')data={...data,...pagareAmount(data.amount)};
+  if(contract.id==='recibo-apartado'){data={...data};for(const key of ['deposit','price','penalty']){const value=pagareAmount(data[key]);data[key]=value.amount;data[key+'Words']=value.amountWords;}}
   const values = {};
   for (const field of contract.fields) {
     const value = String(data[field.key] ?? '').trim();

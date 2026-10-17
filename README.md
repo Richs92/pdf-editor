@@ -113,3 +113,5 @@ python3 tests/verify_water_exports.py
 ```
 
 Incluye noviembre, cambio de año, zona horaria, categoría fija, descarga y anchos de pantalla de 320 a 1360 px. Los archivos de prueba se guardan en `artifacts/water/`, excluido del despliegue.
+
+El **Recibo de apartado compra venta** se encuentra dentro de Contratos y pagaré, en su propio grupo. Su formulario permite editar fecha/lugar, comprador, receptor, persona sujeta a penalización, inmueble, apartado, precio, penalización y plazo de reserva (cinco días de forma predeterminada). Los importes se formatean con comas y se convierten a letra; los campos vacíos generan líneas imprimibles. Ofrece vista previa, Word, PDF y compartir, con los mismos permisos de contratos. La plantilla editable se reconstruye desde el PDF proporcionado, conservado en `data/originals/recibo-apartado.pdf`; el texto se adapta al contenido y puede cambiar de paginación con datos largos. Ejecuta `python3 scripts/prepare-apartado.py` para regenerar la plantilla y su entrada de catálogo. `prepare-contracts.py` también ejecuta ese paso al finalizar.

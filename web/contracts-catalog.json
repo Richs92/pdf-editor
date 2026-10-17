@@ -1629,5 +1629,146 @@
         "default": ""
       }
     ]
+  },
+  {
+    "id": "recibo-apartado",
+    "title": "Recibo de apartado compra venta",
+    "group": "Recibo de apartado",
+    "template": "templates/recibo-apartado.docx",
+    "fields": [
+      {
+        "key": "signCity",
+        "label": "Ciudad y estado",
+        "group": "Fecha y lugar",
+        "type": "text",
+        "default": "Culiacán, Sinaloa"
+      },
+      {
+        "key": "signDay",
+        "label": "Día",
+        "group": "Fecha y lugar",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "signMonth",
+        "label": "Mes",
+        "group": "Fecha y lugar",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "signYear",
+        "label": "Año",
+        "group": "Fecha y lugar",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "buyer",
+        "label": "Nombre de quien entrega / comprador",
+        "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "seller",
+        "label": "Nombre de quien recibe / vendedor",
+        "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "liableParty",
+        "label": "Nombre de la persona sujeta a penalización",
+        "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "propertyAddress",
+        "label": "Dirección del inmueble (sin ciudad y estado)",
+        "group": "Inmueble",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "propertyCity",
+        "label": "Ciudad y estado del inmueble",
+        "group": "Inmueble",
+        "type": "text",
+        "default": "Culiacán, Sinaloa"
+      },
+      {
+        "key": "deposit",
+        "label": "Importe del apartado ($)",
+        "group": "Importes",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "depositWords",
+        "label": "Importe del apartado en letra",
+        "group": "Importes",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "price",
+        "label": "Precio de venta ($)",
+        "group": "Importes",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "priceWords",
+        "label": "Precio de venta en letra",
+        "group": "Importes",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "penalty",
+        "label": "Importe de la penalización ($)",
+        "group": "Importes",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "penaltyWords",
+        "label": "Importe de la penalización en letra",
+        "group": "Importes",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "reserveDays",
+        "label": "Días de reserva",
+        "group": "Plazo de reserva",
+        "type": "number",
+        "default": "5"
+      },
+      {
+        "key": "deadlineDay",
+        "label": "Día límite",
+        "group": "Plazo de reserva",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "deadlineMonth",
+        "label": "Mes límite",
+        "group": "Plazo de reserva",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "deadlineYear",
+        "label": "Año límite",
+        "group": "Plazo de reserva",
+        "type": "text",
+        "default": ""
+      }
+    ]
   }
 ]

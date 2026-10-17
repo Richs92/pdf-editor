@@ -113,3 +113,7 @@ for source in sorted(Path('data/contracts').glob('*.docx')):
         catalog.append(dict(id=key,title=title,group=status,template='templates/'+source.name,fields=selected))
 Path('web/contracts-catalog.json').write_text(json.dumps(catalog,ensure_ascii=False,indent=2))
 print('\n'.join(c['id']+': '+str(len(c['fields']))+' campos' for c in catalog))
+
+# Keep the additional PDF-derived receipt when regenerating the original catalog.
+import runpy
+runpy.run_path("scripts/prepare-apartado.py", run_name="__main__")
