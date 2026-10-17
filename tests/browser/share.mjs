@@ -15,7 +15,7 @@ try{
    return data.files[0].arrayBuffer().then(buffer=>{let binary='';for(const byte of new Uint8Array(buffer))binary+=String.fromCharCode(byte);window.__shares.push({name:data.files[0].name,type:data.files[0].type,data:btoa(binary)});});
   }});
  });
- await browserLogin(page,app.url);await page.goto(app.url+'/contracts.html');await page.locator('#field-seller').fill('PERSONA DE PRUEBA PARA COMPARTIR');
+ await browserLogin(page,app.url);await page.goto(app.url+'/contracts.html');await page.locator('#fields summary').first().click();await page.locator('#field-seller').fill('PERSONA DE PRUEBA PARA COMPARTIR');
  const share=page.locator('#whatsapp-share');await page.waitForFunction(()=>{const button=document.querySelector('#whatsapp-share');return button&&!button.disabled&&!button.closest('#exports').hidden;},{},{timeout:90000});
  await share.click();await page.waitForFunction(()=>window.__shares.length===1);
  const first=await page.evaluate(()=>window.__shares[0]);assert.equal(first.type,'application/pdf');assert.ok(first.name.endsWith('.pdf'));assert.ok((await PDFLib.PDFDocument.load(Buffer.from(first.data,'base64'))).getPageCount()>0);
@@ -23,7 +23,7 @@ try{
  await page.locator('#form-status').filter({hasText:'menú de compartir del teléfono'}).waitFor();assert.ok(app.state.logs.some(log=>log.action==='document_share_requested'&&log.module==='contracts'));assert.ok(!JSON.stringify(app.state.logs).includes('PERSONA DE PRUEBA'));
  await page.evaluate(()=>window.__shareMode='cancel');await share.click();await page.locator('#form-status').filter({hasText:'Menú de compartir cerrado.'}).waitFor();assert.equal(await share.isEnabled(),true);
  // Clear the old file when editing, and share the new note with its latest amount.
- await page.evaluate(()=>window.__shareMode='success');await page.locator('.tab[data-group="Pagaré"]').click();await page.locator('#field-subscriber').fill('SUSCRIPTOR NUEVO PARA COMPARTIR');await page.locator('#field-amount').fill('10000');
+ await page.evaluate(()=>window.__shareMode='success');await page.locator('.tab[data-group="Pagaré"]').click();await page.locator('#fields summary').first().click();await page.locator('#field-subscriber').fill('SUSCRIPTOR NUEVO PARA COMPARTIR');await page.locator('#field-amount').fill('10000');
  await page.waitForFunction(()=>{const button=document.querySelector('#whatsapp-share');return button&&!button.disabled&&!button.closest('#exports').hidden;},{},{timeout:90000});
  await share.click();await page.waitForFunction(()=>window.__shares.length===2);const note=await page.evaluate(()=>window.__shares[1]);assert.equal(note.name,'pagare-llenado.pdf');assert.notEqual(note.data,first.data);await writeFile('artifacts/share/pagare.pdf',Buffer.from(note.data,'base64'));
  // Browsers with no native file sharing offer an actual download, never a fake WhatsApp send.

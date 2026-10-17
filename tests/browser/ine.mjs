@@ -33,6 +33,7 @@ try{
 
  await review('buyer').getByRole('button',{name:'Aplicar datos revisados'}).click();assert.match(await page.locator('#field-buyer').inputValue(),/PEREZ GARCIA LUIS PEDRO/);assert.equal(await page.locator('#field-buyerId').inputValue(),'');assert.equal(await page.locator('#field-seller').inputValue(),'ANA MARIA PEREZ GARCIA');
  // Replacing data already entered needs an explicit confirmation.
+ await page.getByText('Personas',{exact:true}).click();
  await page.locator('#field-buyer').fill('COMPRADOR ESCRITO MANUALMENTE');
  page.once('dialog',dialog=>dialog.dismiss());await review('buyer').getByRole('button',{name:'Aplicar datos revisados'}).click();assert.equal(await page.locator('#field-buyer').inputValue(),'COMPRADOR ESCRITO MANUALMENTE');
  page.once('dialog',dialog=>dialog.accept());await review('buyer').getByRole('button',{name:'Aplicar datos revisados'}).click();assert.match(await page.locator('#field-buyer').inputValue(),/LUIS PEDRO/);

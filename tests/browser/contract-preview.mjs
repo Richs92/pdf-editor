@@ -13,6 +13,7 @@ try{
  const catalog=JSON.parse(await readFile('web/contracts-catalog.json','utf8'));
  for(const item of catalog){
   await page.locator(`.tab[data-group="${item.group}"]`).click();await page.locator(`.template-choice[data-id="${item.id}"]`).click();
+  assert.equal(await page.locator('#fields details[open]').count(),0);await page.locator('#fields summary').first().click();
   const key=item.id==='pagare'?'subscriber':'seller',value='VISTA AUTOMATICA '+item.id.toUpperCase();
   await page.locator('#field-'+key).fill(value);await ready();
   assert.ok((await page.locator('#document-preview').innerText()).includes(value));
@@ -21,6 +22,7 @@ try{
  // Rapid edits and template changes must never allow an older render to win.
  await page.locator('#field-seller').fill('VALOR VIEJO');
  await page.locator('.tab[data-group="Pagaré"]').click();
+ await page.locator('#fields summary').first().click();
  const input=page.locator('#field-subscriber');await input.fill('PRIMER VALOR');await input.fill('SEGUNDO VALOR');await input.fill('ULTIMO VALOR CORRECTO');await ready();
  const preview=await page.locator('#document-preview').innerText();assert.ok(preview.includes('ULTIMO VALOR CORRECTO'));assert.ok(!preview.includes('VALOR VIEJO'));assert.ok(!preview.includes('PRIMER VALOR'));
  const amount=page.locator('#field-amount'),words=page.locator('#field-amountWords');

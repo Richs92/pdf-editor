@@ -42,7 +42,7 @@ function selectDocument(item){
   $('#document-group').textContent=item.group;$('#document-title').textContent=item.title;
   const fields=$('#fields');fields.replaceChildren();const groups=new Map();
   for(const field of item.fields){
-    if(!groups.has(field.group)){const detail=document.createElement('details');detail.open=true;const summary=document.createElement('summary');summary.textContent=field.group;detail.append(summary);groups.set(field.group,detail);fields.append(detail);}
+    if(!groups.has(field.group)){const detail=document.createElement('details');const summary=document.createElement('summary');summary.textContent=field.group;detail.append(summary);groups.set(field.group,detail);fields.append(detail);}
     const wrapper=document.createElement('div');wrapper.className='field';const label=document.createElement('label');label.htmlFor='field-'+field.key;label.textContent=field.label;
     const input=document.createElement(field.type==='textarea'?'textarea':'input');input.id=label.htmlFor;input.name=field.key;input.placeholder='Opcional · se deja una línea si está vacío';input.maxLength=4000;
     if(item.id==='pagare'&&field.key==='amount'){input.inputMode='decimal';input.maxLength=14;input.placeholder='Ej. 10,000';}

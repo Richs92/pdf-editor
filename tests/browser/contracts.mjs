@@ -39,7 +39,7 @@ const sample={seller:'ANA PÉREZ GARCÍA',buyer:'LUIS LÓPEZ RUIZ',sellerId:'INE
   assert.ok(!(await page.locator('#document-preview').innerText()).includes('DATOS A COMPLETAR ANTES DE FIRMAR'));
   assert.ok(await page.locator('#document-preview section.docx').count()>0);
   const before=await page.evaluate(()=>visualViewport.scale);
-  const input=page.locator('#fields input').first();await input.focus();
+  const input=page.locator('#fields input').first();await input.evaluate(el=>{el.closest('details').open=true;});await input.focus();
   assert.ok(await input.evaluate(el=>parseFloat(getComputedStyle(el).fontSize))>=16);
   assert.equal(await page.evaluate(()=>visualViewport.scale),before);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
