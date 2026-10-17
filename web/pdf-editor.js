@@ -10,12 +10,12 @@ export async function generatePDF(PDFLib, templateBytes, data, now = new Date(),
   if (!/^[0-9]{12}$/.test(service)) throw new Error('El número de servicio debe tener exactamente 12 dígitos.');
   const rfc = String(data.rfc ?? '').trim().toUpperCase();
   const businessName = String(data.businessName ?? '').trim();
-  const taxRegime = String(data.taxRegime ?? '000').trim();
-  const postalCode = String(data.postalCode ?? '00000').trim();
+  const taxRegime = String(data.taxRegime ?? '').trim();
+  const postalCode = String(data.postalCode ?? '').trim();
   if (rfc && !/^[A-ZÑ&]{3,4}[0-9]{6}[A-Z0-9]{3}$/.test(rfc)) throw new Error('El RFC debe tener 12 o 13 caracteres con formato válido.');
   if (businessName.length > 120 || /[\r\n]/.test(businessName)) throw new Error('La razón social admite hasta 120 caracteres en una línea.');
-  if (!taxRegime || taxRegime.length > 150 || /[\r\n]/.test(taxRegime)) throw new Error('Escribe un régimen fiscal de hasta 150 caracteres en una línea.');
-  if (!/^[0-9]{5}$/.test(postalCode)) throw new Error('El CP fiscal debe tener 5 dígitos.');
+  if (taxRegime.length > 150 || /[\r\n]/.test(taxRegime)) throw new Error('Escribe un régimen fiscal de hasta 150 caracteres en una línea.');
+  if (postalCode && !/^[0-9]{5}$/.test(postalCode)) throw new Error('El CP fiscal debe tener 5 dígitos.');
   const doc = await PDFLib.PDFDocument.load(templateBytes);
   if (!fontkit || !nameFontBytes) throw new Error('No se pudo cargar la fuente del nombre. Recarga la página.');
   doc.registerFontkit(fontkit);

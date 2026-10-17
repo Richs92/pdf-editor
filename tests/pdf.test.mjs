@@ -16,7 +16,7 @@ test('genera un PDF de dos páginas con campos nuevos', async () => {
   await writeFile('artifacts/test-generated.pdf',bytes);
 });
 test('rechaza datos inválidos',async () => {
-  for(const patch of [{name:''},{name:'😀'},{rfc:'INVALIDO'},{businessName:'😀'},{taxRegime:''},{taxRegime:'😀'},{taxRegime:'a'.repeat(151)},{taxRegime:'a\nb'},{postalCode:'8001'},{service:'123'},{service:'１２３４５６７８９０１２'},{address:'a\nb\nc\nd\ne'}]) {
+  for(const patch of [{name:''},{name:'😀'},{rfc:'INVALIDO'},{businessName:'😀'},{taxRegime:'😀'},{taxRegime:'a'.repeat(151)},{taxRegime:'a\nb'},{postalCode:'8001'},{service:'123'},{service:'１２３４５６７８９０１２'},{address:'a\nb\nc\nd\ne'}]) {
     await assert.rejects(generatePDF(PDFLib,template,{...values,...patch}));
   }
 });
@@ -39,4 +39,9 @@ test('fuente gruesa: nombres con acentos, ñ y ajuste de nombres largos', async(
   assert.ok(fonts.entries().some(([,ref])=>doc.context.lookup(ref,PDFLib.PDFDict).get(PDFLib.PDFName.of('BaseFont'))?.toString().includes('ArchivoBlack')));
   await writeFile('artifacts/cfe-name-'+(name.startsWith('MARÍA')?'accents':name.startsWith('WW')?'long':name.split(' ')[0])+'.pdf',bytes);
  }
+});
+
+test('datos fiscales opcionales: genera el PDF sin régimen fiscal ni CP fiscal',async()=>{
+ const bytes=await generatePDF(PDFLib,template,{...values,rfc:'',businessName:'',taxRegime:'',postalCode:''});
+ assert.equal((await PDFLib.PDFDocument.load(bytes)).getPageCount(),2);
 });

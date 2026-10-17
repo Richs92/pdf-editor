@@ -11,7 +11,10 @@ try{
  for(const [label,value,expected] of [['Calle y número','río bravo 123','RIO BRAVO 123'],['Entre calles','álamos y juárez','ALAMOS Y JUAREZ'],['Colonia','las quintás','LAS QUINTAS'],['Ciudad y estado','Culiacán, sin.','CULIACAN, SIN.']]){
   const input=page.getByLabel(label,{exact:true});await input.fill(value);assert.equal(await input.inputValue(),expected);
  }
- await page.getByLabel('Código postal de la dirección',{exact:true}).fill('01234');await page.getByRole('button',{name:'Actualizar vista previa'}).click();await page.locator('#status').filter({hasText:'PDF listo.'}).waitFor();
+ await page.getByLabel('Código postal de la dirección',{exact:true}).fill('01234');
+ await page.getByLabel('Elegir régimen fiscal',{exact:true}).selectOption('custom');
+ for(const id of ['rfc','businessName','taxRegime','postalCode'])await page.locator('#'+id).fill('');
+ assert.equal(await page.locator('#form').evaluate(form=>form.checkValidity()),true);await page.getByRole('button',{name:'Actualizar vista previa'}).click();await page.locator('#status').filter({hasText:'PDF listo.'}).waitFor();
  const pending=page.waitForEvent('download');await page.locator('#download').click();const downloaded=await pending;assert.ok(downloaded.suggestedFilename().endsWith('.pdf'));await downloaded.saveAs('artifacts/cfe-structured-address.pdf');
  assert.ok(app.state.logs.some(log=>log.action==='document_downloaded'&&log.module==='cfe'));assert.ok(!JSON.stringify(app.state.logs).includes('MARIA JOSE'));
  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
