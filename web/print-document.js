@@ -5,9 +5,9 @@ export function openPrintWindow(){
  const close=document.createElement('button');close.type='button';close.textContent='Cerrar impresión';close.style.cssText='display:block;width:100%;padding:14px;border:0;background:#192b36;color:white;font:16px system-ui';
  const frame=document.createElement('iframe');frame.title='Documento listo para imprimir';frame.style.cssText='display:block;width:100%;height:calc(100% - 48px);border:0;background:white';dialog.append(close,frame);document.body.append(dialog);dialog.showModal();
  const win=frame.contentWindow,doc=win.document;doc.documentElement.lang='es';doc.head.replaceChildren();doc.body.replaceChildren();doc.title='Imprimir documento';
- let stopped=false,finished=false,task,renderTask,rejectStop,timer,url;
+ let stopped=false,finished=false,task,renderTask,rejectStop,timer,ticker,url;
  const interrupted=new Promise((_,reject)=>{rejectStop=reject;});interrupted.catch(()=>{});
- const stop=error=>{if(stopped)return;stopped=true;clearTimeout(timer);rejectStop(error);try{renderTask?.cancel();}catch{}try{task?.destroy().catch(()=>{});}catch{}};
+ const stop=error=>{if(stopped)return;stopped=true;clearTimeout(timer);clearInterval(ticker);rejectStop(error);try{renderTask?.cancel();}catch{}try{task?.destroy().catch(()=>{});}catch{}};
  const hide=()=>{stop(Error('Impresión cerrada.'));if(url)win.URL.revokeObjectURL(url);dialog.close();dialog.remove();};close.onclick=hide;dialog.addEventListener('cancel',event=>{event.preventDefault();hide();});
  const check=()=>{if(stopped||!dialog.isConnected)throw Error('La preparación de impresión se canceló.');};
  const wait=promise=>Promise.race([promise,interrupted]);
@@ -15,33 +15,37 @@ export function openPrintWindow(){
  const style=doc.createElement('style');style.textContent='*{box-sizing:border-box}body{margin:0;background:#e8edf0;font:16px system-ui;color:#192b36}.toolbar{padding:18px;background:white;position:sticky;top:0}button,a{display:inline-block;margin:6px;padding:12px 18px;border:0;border-radius:8px;background:#13775e;color:white;font:inherit;text-decoration:none}button:disabled{opacity:.5}.sheet{display:block;margin:16px auto;background:white;max-width:100%;height:auto}@media print{html,body{margin:0;padding:0;background:white}.toolbar{display:none!important}.sheet{display:block;margin:0;width:100%;max-width:none;break-after:page;page-break-after:always;break-inside:avoid}.sheet:last-child{break-after:auto;page-break-after:auto}}';doc.head.append(style);
  const toolbar=doc.createElement('div');toolbar.className='toolbar';
  const message=doc.createElement('p');message.textContent='Preparando todas las páginas…';message.setAttribute('role','status');
+ const started=Date.now(),elapsed=doc.createElement('p');elapsed.id='print-elapsed';elapsed.setAttribute('role','timer');elapsed.setAttribute('aria-live','off');
+ const updateElapsed=()=>{const seconds=Math.floor((Date.now()-started)/1000);elapsed.textContent=finished?'Listo en '+seconds+' s':stopped?'Preparación detenida a los '+seconds+' s':'Tiempo transcurrido: '+seconds+' s · límite: 45 s';};updateElapsed();ticker=setInterval(updateElapsed,1000);
+ const progress=doc.createElement('progress');progress.setAttribute('aria-label','Progreso de preparación');progress.style.cssText='display:block;width:100%;height:14px;accent-color:#13775e;margin:12px 0';
+ const stage=text=>{if(!stopped&&!finished)message.textContent=text;};
  const button=doc.createElement('button');button.textContent='Imprimir';button.disabled=true;button.onclick=()=>win.print();
  const hint=doc.createElement('p');hint.textContent='Selecciona tu impresora en el menú del dispositivo. En iPhone debe ser compatible con AirPrint; en Android puede requerir el servicio de impresión del fabricante. Conecta ambos a la misma red Wi-Fi.';
- toolbar.append(message,button,hint);doc.body.append(toolbar);
- const fail=error=>{stop(error);if(dialog.isConnected){button.disabled=true;doc.querySelectorAll('.sheet').forEach(image=>image.remove());message.textContent=(error.message||'No se pudo preparar la impresión.')+' Puedes cerrar e intentarlo de nuevo, o descargar el PDF si está disponible.';}};
+ toolbar.append(message,progress,elapsed,button,hint);doc.body.append(toolbar);
+ const fail=error=>{stop(error);updateElapsed();progress.hidden=true;progress.style.display='none';if(dialog.isConnected){button.disabled=true;doc.querySelectorAll('.sheet').forEach(image=>image.remove());message.textContent=(error.message||'No se pudo preparar la impresión.')+' Puedes cerrar e intentarlo de nuevo, o descargar el PDF si está disponible.';}};
  timer=setTimeout(()=>{if(!finished)fail(Error('La preparación superó 45 segundos.'));},45000);
  return {
-  wait,fail,
+  wait,fail,stage,
   async show(blob,filename='documento.pdf'){
-   check();
+   check();stage('Cargando el documento para imprimir…');
    url=win.URL.createObjectURL(blob);const link=doc.createElement('a');link.href=url;link.download=filename;link.textContent='Descargar PDF';toolbar.append(link);
    try{await wait((async()=>{
    const pdfjs=await import('./vendor/pdf.mjs');pdfjs.GlobalWorkerOptions.workerSrc=new URL('./vendor/pdf.worker.mjs',import.meta.url).href;
    const bytes=new Uint8Array(await blob.arrayBuffer());check();task=pdfjs.getDocument({data:bytes,standardFontDataUrl:new URL('./vendor/standard_fonts/',import.meta.url).href,cMapUrl:new URL('./vendor/cmaps/',import.meta.url).href,cMapPacked:true});
    let pdf;
    try{
-    pdf=await task.promise;
+    pdf=await task.promise;progress.max=pdf.numPages;progress.value=0;
     for(let n=1;n<=pdf.numPages;n++){
-     check();
+     check();stage('Preparando página '+n+' de '+pdf.numPages+'…');
      const page=await pdf.getPage(n),size=page.getViewport({scale:1}),viewport=page.getViewport({scale:2});
      if(n===1){const css=doc.createElement('style');css.textContent=`@page{size:${size.width}pt ${size.height}pt;margin:0}`;doc.head.append(css);}
      const canvas=document.createElement('canvas');canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);renderTask=page.render({canvasContext:canvas.getContext('2d'),viewport});await renderTask.promise;renderTask=null;
      check();
      const image=doc.createElement('img');image.className='sheet';image.alt='Página '+n+' de '+pdf.numPages;image.style.width=size.width+'pt';image.src=canvas.toDataURL('image/png');canvas.width=canvas.height=0;
-     doc.body.append(image);await image.decode();page.cleanup();
+     doc.body.append(image);await image.decode();check();progress.value=n;page.cleanup();
     }
     check();
-    finished=true;clearTimeout(timer);
+    finished=true;clearTimeout(timer);clearInterval(ticker);updateElapsed();
     message.textContent=pdf.numPages+' página(s) listas. Si no se abre el menú, pulsa Imprimir. También puedes descargar el PDF y usar Compartir → Imprimir.';button.disabled=false;
     win.focus();win.print();
    }finally{if(pdf)await pdf.destroy();else if(task)await task.destroy();}

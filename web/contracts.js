@@ -227,7 +227,7 @@ $('#google-download').addEventListener('click',async()=>{try{await wordDownload(
 $('#print-document').addEventListener('click',async()=>{
  if(!generated||busy)return;let view;const ready=generated;lock(true);
  try{
-  view=openPrintWindow();const pdf=await view.wait(pdfForReady(ready));if(generated!==ready)throw Error('El documento cambió. Espera la vista previa actualizada y vuelve a imprimir.');
+  view=openPrintWindow();view.stage('Generando el PDF con firmas y anexos…');const pdf=await view.wait(pdfForReady(ready));if(generated!==ready)throw Error('El documento cambió. Espera la vista previa actualizada y vuelve a imprimir.');
   await view.wait(logGeneration(ready));await view.wait(recordEvent('contracts','document_print_requested',{documentId:ready.id,format:'pdf'}));
   if(generated!==ready)throw Error('El documento cambió. Vuelve a imprimir la versión actualizada.');
   await view.show(pdf,ready.id+'-llenado.pdf');status.textContent='Impresión solicitada. Selecciona la impresora en el menú del dispositivo.';
