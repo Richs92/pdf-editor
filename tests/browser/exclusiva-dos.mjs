@@ -19,6 +19,13 @@ try{
  assert.equal(cells.length,3);assert.ok(cells.every(c=>c.images===1));assert.ok(cells[0].text.includes('ANA PROPIETARIA UNO'));assert.ok(cells[1].text.includes('LUIS PROPIETARIO DOS'));assert.ok(cells[2].text.includes('PROFESIONAL TRES'));
  download=page.waitForEvent('download');await page.locator('#pdf-download').click();await(await download).saveAs('artifacts/signatures/exclusiva-dos.pdf');
  await page.locator('#field-buyer2').evaluate(el=>el.closest('details').open=true);await page.locator('#field-buyer2').fill('CAMBIO DEL SEGUNDO PROPIETARIO');await page.waitForFunction(()=>document.querySelector('#preview-state').textContent==='Vista previa actualizada'&&document.querySelector('#document-preview').textContent.includes('CAMBIO DEL SEGUNDO PROPIETARIO'));
- await page.locator('[data-id="contrato-exclusiva"]').click();assert.equal(await page.locator('.photo-card').count(),4);assert.equal(await page.locator('#signature-section').isVisible(),false);assert.deepEqual(errors,[]);
+ await page.locator('[data-id="contrato-exclusiva"]').click();assert.equal(await page.locator('.photo-card').count(),4);assert.equal(await page.locator('#signature-section').isVisible(),true);assert.equal(await page.locator('.signature-card').count(),2);assert.deepEqual(errors,[]);
+ for(let i=0;i<2;i++){
+  const card=page.locator('.signature-card').nth(i);await card.locator('canvas').scrollIntoViewIfNeeded();const b=await card.locator('canvas').boundingBox();await page.mouse.move(b.x+b.width*.2,b.y+b.height*.5);await page.mouse.down();await page.mouse.move(b.x+b.width*.7,b.y+b.height*.3,{steps:8});await page.mouse.up();await card.getByRole('button',{name:'Usar firma',exact:true}).click();
+ }
+ await page.waitForFunction(()=>document.querySelector('#preview-state').textContent==='Vista previa actualizada');
+ download=page.waitForEvent('download');await page.locator('#word-download').click();await(await download).saveAs('artifacts/signatures/exclusiva-uno.docx');
+ const single=new PizZip(await readFile('artifacts/signatures/exclusiva-uno.docx'));assert.ok(single.file('word/media/terminavit-signature-buyer.png'));assert.ok(single.file('word/media/terminavit-signature-seller.png'));assert.ok(!single.file('word/media/terminavit-signature-buyer2.png'));
+ download=page.waitForEvent('download');await page.locator('#pdf-download').click();await(await download).saveAs('artifacts/signatures/exclusiva-uno.pdf');assert.deepEqual(errors,[]);
  console.log('Exclusiva dos propietarios: tres firmas en sus campos, seis caras de INE en tres anexos, Word, PDF y revocación al cambiar datos.');
 }finally{await browser.close();await app.close();}

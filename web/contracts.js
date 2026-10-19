@@ -65,9 +65,9 @@ function selectDocument(item){
   $('#document-preview').replaceChildren();const empty=document.createElement('div');empty.className='empty';empty.textContent='Cargando vista previa del documento…';$('#document-preview').append(empty);schedulePreview(0);
 }
 function buildSignaturePads(){
- const section=$('#signature-section'),area=$('#signature-pads');area.replaceChildren();section.hidden=!['recibo-apartado','contrato-exclusiva-dos'].includes(current?.id);if(section.hidden)return;
+ const section=$('#signature-section'),area=$('#signature-pads');area.replaceChildren();section.hidden=!['recibo-apartado','contrato-exclusiva','contrato-exclusiva-dos'].includes(current?.id);if(section.hidden)return;
  const id=current.id;
- for(const [person,label]of (id==='contrato-exclusiva-dos'?[['buyer','Propietario 1'],['buyer2','Propietario 2'],['seller','Profesional']]:[['buyer','Comprador · Entrega'],['seller','Asesor/vendedor · Recibe']])){
+ for(const [person,label]of (id==='contrato-exclusiva'?[['buyer','Propietario'],['seller','Profesional']]:id==='contrato-exclusiva-dos'?[['buyer','Propietario 1'],['buyer2','Propietario 2'],['seller','Profesional']]:[['buyer','Comprador · Entrega'],['seller','Asesor/vendedor · Recibe']])){
   area.append(signaturePad(label,signatureData.get(id)?.[person],signature=>{if(current.id!==id)return;signatureData.set(id,{...signatureData.get(id),[person]:signature});markDirty(true);buildSignaturePads();},()=>{const values={...signatureData.get(id)};delete values[person];signatureData.set(id,values);markDirty(true);buildSignaturePads();}));
  }
 }

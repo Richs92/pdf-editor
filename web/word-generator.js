@@ -115,7 +115,7 @@ export async function generateWord(templateBytes, contract, data, photos=[], sig
     zip.file(relPath,new XMLSerializer().serializeToString(rels));
     zip.file('[Content_Types].xml',new XMLSerializer().serializeToString(types));
   }
-  if(['recibo-apartado','contrato-exclusiva-dos'].includes(contract.id))addSignatures(zip,values,signatures,contract.id);
+  if(['recibo-apartado','contrato-exclusiva','contrato-exclusiva-dos'].includes(contract.id))addSignatures(zip,values,signatures,contract.id);
   addPageNumbers(zip);
   return zip.generate({type:'uint8array',compression:'DEFLATE'});
 }
@@ -139,9 +139,9 @@ function addPageNumbers(zip){
 
 function addSignatures(zip,values,signatures,documentId){
  const doc=parseXML(zip.file('word/document.xml').asText()),rels=parseXML(zip.file('word/_rels/document.xml.rels').asText()),types=parseXML(zip.file('[Content_Types].xml').asText());
- for(const [index,person,label]of (documentId==='contrato-exclusiva-dos'?[[0,'buyer','PROPIETARIO 1'],[1,'buyer2','PROPIETARIO 2'],[2,'seller','EL PROFESIONAL']]:[[0,'buyer','Entrega'],[1,'seller','Recibe']])){
+ for(const [index,person,label]of (documentId==='contrato-exclusiva'?[[0,'buyer','EL CLIENTE'],[1,'seller','EL PROFESIONAL']]:documentId==='contrato-exclusiva-dos'?[[0,'buyer','PROPIETARIO 1'],[1,'buyer2','PROPIETARIO 2'],[2,'seller','EL PROFESIONAL']]:[[0,'buyer','Entrega'],[1,'seller','Recibe']])){
   const signature=signatures[person];if(!signature)continue;
-  const cell=[...doc.getElementsByTagNameNS(W,'tc')].find(cell=>documentId==='contrato-exclusiva-dos'?[...cell.getElementsByTagNameNS(W,'bookmarkStart')].some(mark=>mark.getAttributeNS(W,'name')==='TerminavitSignature_'+person):cell.textContent.trim().endsWith(label));if(!cell)throw Error('No se encontró el espacio de firma de '+label+'.');
+  const cell=[...doc.getElementsByTagNameNS(W,'tc')].find(cell=>documentId.startsWith('contrato-exclusiva')?[...cell.getElementsByTagNameNS(W,'bookmarkStart')].some(mark=>mark.getAttributeNS(W,'name')==='TerminavitSignature_'+person):cell.textContent.trim().endsWith(label));if(!cell)throw Error('No se encontró el espacio de firma de '+label+'.');
   const id='rIdTerminavitSignature'+index,target='media/terminavit-signature-'+person+'.png';zip.file('word/'+target,signature.bytes);
   const rel=rels.createElementNS(rels.documentElement.namespaceURI,'Relationship');rel.setAttribute('Id',id);rel.setAttribute('Type',R+'/image');rel.setAttribute('Target',target);rels.documentElement.append(rel);
   const scale=Math.min(2.2*914400/signature.width,.65*914400/signature.height);

@@ -41,8 +41,11 @@ for index,page in enumerate(source.split('\f')):
    else:p.add_run(part).bold=heading
 # Signature names occur in the source block removed above, and stay editable here.
 table=doc.add_table(rows=1,cols=2);caption=OxmlElement('w:tblCaption');caption.set(qn('w:val'),'TerminavitSignatures');table._tbl.tblPr.append(caption)
-for cell,key,label in [(table.cell(0,0),'buyer','EL CLIENTE'),(table.cell(0,1),'seller','EL PROFESIONAL')]:
- p=cell.paragraphs[0];p.alignment=WD_ALIGN_PARAGRAPH.CENTER;p.add_run('____________________________\n“'+label+'”\nNombre: {'+key+'}')
+for index,(cell,key,label) in enumerate([(table.cell(0,0),'buyer','EL CLIENTE'),(table.cell(0,1),'seller','EL PROFESIONAL')]):
+ p=cell.paragraphs[0];p.alignment=WD_ALIGN_PARAGRAPH.CENTER
+ mark=OxmlElement('w:bookmarkStart');mark.set(qn('w:id'),str(800+index));mark.set(qn('w:name'),'TerminavitSignature_'+key);p._p.append(mark)
+ p.add_run('____________________________\n“'+label+'”\nNombre: {'+key+'}')
+ end=OxmlElement('w:bookmarkEnd');end.set(qn('w:id'),str(800+index));p._p.append(end)
 import runpy
 apply_layout=runpy.run_path('scripts/exclusiva-layout.py')['apply_layout'];apply_layout(doc)
 doc.save('web/templates/contrato-exclusiva.docx')
