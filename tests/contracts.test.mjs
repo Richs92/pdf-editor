@@ -61,7 +61,7 @@ test('exclusiva: nueve cláusulas, fundamentos conservados y campos opcionales',
  const xml=new PizZip(await readFile('web/'+item.template)).file('word/document.xml').asText();
  for(const key of item.fields.map(field=>field.key))assert.ok(xml.includes('{'+key+'}'),key);
  for(const clause of ['PRIMERA','SEGUNDA','TERCERA','CUARTA','QUINTA','SEXTA','SÉPTIMA','OCTAVA','NOVENA'])assert.ok(xml.includes(clause),clause);
- for(const text of ['Artículo 24','Fracción XVI','90 DIAS','5%','16%','60 días','90 días','50%','3%'])assert.ok(xml.includes(text),text);
+ for(const text of ['Artículo 24','Fracción XVI','{durationDays}','{commission}','{commissionWords}','16%','60 días','90 días','50%','3%'])assert.ok(xml.includes(text),text);
  const filled=validateContract(item,{buyer:'CLIENTE DE PRUEBA',seller:'PROFESIONAL DE PRUEBA',price:'1250000.50'});assert.equal(filled.price,'1,250,000.50');assert.equal(filled.priceWords,'Un millón doscientos cincuenta mil pesos 50/100 m.n.');assert.match(filled.folio,/^_+$/);
  assert.deepEqual(groupINEPhotos([{person:'seller',face:'front'},{person:'buyer',face:'back'}],item.id).map(group=>group.title),['Cliente','Profesional']);
 });

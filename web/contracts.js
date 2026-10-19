@@ -1,5 +1,6 @@
 import {authorize,recordEvent} from './session.js';
 await authorize('contracts');
+import {commissionTerms} from './exclusiva-terms.js';
 import {generateContractPDF} from './contract-pdf.js';
 import {cropINEPhoto} from './ine-crop.js';
 import {openPrintWindow,supportsDirectPrinting,shareForPrinting} from './print-document.js';
@@ -51,10 +52,13 @@ function selectDocument(item){
     const input=document.createElement(field.type==='textarea'?'textarea':'input');input.id=label.htmlFor;input.name=field.key;input.placeholder='Opcional · se deja una línea si está vacío';input.maxLength=4000;
     if(moneyPairs(item.id).some(([amount])=>field.key===amount)){input.inputMode='decimal';input.maxLength=14;input.placeholder='Ej. 10,000';}
     if(moneyPairs(item.id).some(([,words])=>field.key===words)){input.readOnly=true;input.placeholder='Se calcula automáticamente con el importe';}
+    if(field.key==='commission'&&item.group==='Exclusiva')input.inputMode='decimal';
+    if(field.key==='commissionWords'&&item.group==='Exclusiva'){input.readOnly=true;input.placeholder='Se calcula automáticamente con la comisión';}
     if(field.type==='number'){input.type='number';input.min='0';input.step='1';input.inputMode='numeric';}
+    if(field.key==='durationDays')input.min='1';
     input.value=drafts.get(item.id)?.[field.key]??field.default;wrapper.append(label,input);if(['sellerId','buyerId','buyer2Id'].includes(field.key)){const hint=document.createElement('p');hint.className='hint';hint.textContent='Tipo INE y número del reverso (CIC u OCR). Escribe el número tal como aparece en la credencial.';wrapper.append(hint);}groups.get(field.group).append(wrapper);
   }
-  syncMoneyAmounts();
+  syncMoneyAmounts();syncCommission();
   buildPhotoCards();buildSignaturePads();$('#exports').hidden=true;status.textContent='La vista previa se actualiza automáticamente. Puedes dejar campos vacíos.';
   $('#document-preview').replaceChildren();const empty=document.createElement('div');empty.className='empty';empty.textContent='Cargando vista previa del documento…';$('#document-preview').append(empty);schedulePreview(0);
 }
@@ -142,9 +146,14 @@ function syncMoneyAmounts(){
  }catch(error){input.setCustomValidity(error.message);words.value='';}
  }
 }
+function syncCommission(){
+ if(current?.group!=='Exclusiva')return;
+ const input=form.elements.commission,words=form.elements.commissionWords;
+ try{words.value=commissionTerms(input.value).commissionWords;input.setCustomValidity('');}catch(error){words.value='';input.setCustomValidity(error.message);}
+}
 form.addEventListener('invalid',event=>{const group=event.target.closest('details');if(group)group.open=true;},true);
-form.addEventListener('input',event=>{if(event.target.closest('#fields')&&!event.isComposing){if(moneyPairs(current?.id).some(([key])=>event.target.name===key))syncMoneyAmounts();saveDraft();markDirty();}});
-form.addEventListener('compositionend',event=>{if(event.target.closest('#fields')){saveDraft();markDirty();}});
+form.addEventListener('input',event=>{if(event.target.closest('#fields')&&!event.isComposing){if(event.target.name==='commission')syncCommission();if(moneyPairs(current?.id).some(([key])=>event.target.name===key))syncMoneyAmounts();saveDraft();markDirty();}});
+form.addEventListener('compositionend',event=>{if(event.target.closest('#fields')){syncCommission();saveDraft();markDirty();}});
 async function logGeneration(ready){
  if(!ready.logged)ready.logged=recordEvent('contracts','document_generated',{documentId:ready.id}).catch(error=>{ready.logged=null;throw error;});
  await ready.logged;

@@ -1855,6 +1855,27 @@
         "default": ""
       },
       {
+        "key": "durationDays",
+        "label": "Vigencia del contrato (días)",
+        "group": "Precio y condiciones",
+        "type": "number",
+        "default": "90"
+      },
+      {
+        "key": "commission",
+        "label": "Comisión (%)",
+        "group": "Precio y condiciones",
+        "type": "text",
+        "default": "5"
+      },
+      {
+        "key": "commissionWords",
+        "label": "Comisión en letra (automático)",
+        "group": "Precio y condiciones",
+        "type": "text",
+        "default": ""
+      },
+      {
         "key": "price",
         "label": "Precio del inmueble ($)",
         "group": "Precio y condiciones",
@@ -2027,6 +2048,27 @@
         "key": "cadastre",
         "label": "Número de cuenta predial",
         "group": "Inmueble",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "durationDays",
+        "label": "Vigencia del contrato (días)",
+        "group": "Precio y condiciones",
+        "type": "number",
+        "default": "90"
+      },
+      {
+        "key": "commission",
+        "label": "Comisión (%)",
+        "group": "Precio y condiciones",
+        "type": "text",
+        "default": "5"
+      },
+      {
+        "key": "commissionWords",
+        "label": "Comisión en letra (automático)",
+        "group": "Precio y condiciones",
         "type": "text",
         "default": ""
       },

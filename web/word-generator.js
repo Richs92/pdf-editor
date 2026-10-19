@@ -1,3 +1,4 @@
+import {commissionTerms} from './exclusiva-terms.js';
 import {pagareAmount} from './pagare-amount.js';
 const W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
 const R = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
@@ -5,6 +6,7 @@ const escapeXML = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;',
 export function validateContract(contract, data) {
   if(contract.id==='pagare')data={...data,...pagareAmount(data.amount)};
   if(['recibo-apartado','contrato-exclusiva','contrato-exclusiva-dos'].includes(contract.id)){data={...data};for(const key of (contract.id.startsWith('contrato-exclusiva')?['price']:['deposit','price','penalty'])){const value=pagareAmount(data[key]);data[key]=value.amount;data[key+'Words']=value.amountWords;}}
+  if(contract.id?.startsWith('contrato-exclusiva'))data={...data,...commissionTerms(data.commission)};
   const values = {};
   for (const field of contract.fields) {
     const value = String(data[field.key] ?? '').trim();
@@ -15,6 +17,7 @@ export function validateContract(contract, data) {
     }
     if (value.length > 4000 || /[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(value)) throw new Error(`Revisa: ${field.label}.`);
     if (field.type === 'number' && !/^\d+$/.test(value)) throw new Error(`${field.label}: escribe un número entero de días.`);
+    if(field.key==='durationDays'&&Number(value)<1)throw Error('Vigencia: escribe al menos un día.');
     values[field.key] = value;
   }
   return values;

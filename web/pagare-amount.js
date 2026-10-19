@@ -2,7 +2,7 @@ const units=['cero','uno','dos','tres','cuatro','cinco','seis','siete','ocho','n
 const tens=['','','','treinta','cuarenta','cincuenta','sesenta','setenta','ochenta','noventa'];
 const hundreds=['','ciento','doscientos','trescientos','cuatrocientos','quinientos','seiscientos','setecientos','ochocientos','novecientos'];
 const apocopate=text=>text.replace(/veintiuno$/,'veintiún').replace(/uno$/,'un');
-function integerWords(n){
+export function integerWords(n){
  if(n<30)return units[n];
  if(n<100)return tens[Math.floor(n/10)]+(n%10?' y '+units[n%10]:'');
  if(n===100)return 'cien';

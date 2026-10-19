@@ -22,6 +22,9 @@ const sample={seller:'ANA PÉREZ GARCÍA',buyer:'LUIS LÓPEZ RUIZ',sellerId:'INE
   await page.locator(`.template-choice[data-id="${item.id}"]`).click();
   assert.equal(await page.locator('#fields [name]').count(),item.fields.length);
   await page.evaluate(sample=>{for(const el of document.querySelectorAll('#fields input,#fields textarea'))el.value=sample[el.name]||'15';document.querySelector('#contract-form').dispatchEvent(new Event('input',{bubbles:true}));},sample);
+  if(item.group==='Exclusiva'){
+   await page.locator('#field-commission').evaluate(el=>el.closest('details').open=true);await page.locator('#field-commission').fill('6.5');await page.locator('#field-durationDays').fill('120');assert.equal(await page.locator('#field-commissionWords').inputValue(),'Seis punto cinco por ciento');
+  }
   if(item.id==='recibo-apartado'){
    await page.locator('#field-deposit').evaluate(el=>el.closest('details').open=true);
    await page.locator('#field-deposit').fill('10000');
@@ -42,6 +45,7 @@ const sample={seller:'ANA PÉREZ GARCÍA',buyer:'LUIS LÓPEZ RUIZ',sellerId:'INE
   await page.getByRole('button',{name:'Actualizar vista previa',exact:true}).click();
   await page.locator('#exports').waitFor({state:'visible',timeout:60000});
   assert.ok((await page.locator('#document-preview').innerText()).includes(item.id==='pagare'?sample.subscriber:sample.seller));
+  if(item.group==='Exclusiva'){const text=await page.locator('#document-preview').innerText();assert.ok(text.includes('6.5%'));assert.ok(text.includes('Seis punto cinco por ciento'));assert.ok(text.includes('120 días'));}
   assert.ok(!(await page.locator('#document-preview').innerText()).includes('{seller}'));
   assert.ok(!(await page.locator('#document-preview').innerText()).includes('DATOS A COMPLETAR ANTES DE FIRMAR'));
   assert.ok(await page.locator('#document-preview section.docx').count()>0);
