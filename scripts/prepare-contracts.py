@@ -117,3 +117,5 @@ print('\n'.join(c['id']+': '+str(len(c['fields']))+' campos' for c in catalog))
 # Keep the additional PDF-derived receipt when regenerating the original catalog.
 import runpy
 runpy.run_path("scripts/prepare-apartado.py", run_name="__main__")
+
+runpy.run_path("scripts/prepare-exclusiva.py", run_name="__main__")

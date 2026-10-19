@@ -11,3 +11,5 @@
 .ine-crop-dialog{width:min(92vw,720px);max-height:92dvh;overflow:auto;border:0;border-radius:14px;padding:20px;color:#192b36}.ine-crop-dialog::backdrop{background:#0009}.ine-crop-dialog p{font-size:14px}.ine-crop-dialog canvas{display:block;max-width:100%;max-height:54dvh;width:auto;height:auto;margin:auto;touch-action:none;border:1px solid #aaa}.crop-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.crop-actions button{padding:12px;border-radius:7px;background:#edf6f2;color:#17664f}.crop-actions button:nth-child(3){background:#13775e;color:white}
 
 .signature-card{margin-top:16px;padding:12px;border:1px solid #dce5e9;border-radius:10px}.signature-card canvas{display:block;width:100%;height:auto;aspect-ratio:900/330;border:1px dashed #7c8c94;background:white;touch-action:none;margin:12px 0}.signature-card h3{margin:0}
+
+.tabs{flex-wrap:wrap}

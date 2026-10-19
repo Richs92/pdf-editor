@@ -34,7 +34,7 @@ function setGroup(group){
   for(const item of catalog.filter(item=>item.group===group)){
     const button=document.createElement('button');button.className='template-choice';button.dataset.id=item.id;
     const title=document.createElement('strong');title.textContent=item.title;
-    const subtitle=document.createElement('small');subtitle.textContent=item.group==='Recibo de apartado'?'Recibo · Word y PDF':item.group==='Pagaré'?'Título de crédito · Word y PDF':'Promesa de compraventa · '+item.group;
+    const subtitle=document.createElement('small');subtitle.textContent=item.group==='Exclusiva'?'Servicios inmobiliarios · Word y PDF':item.group==='Recibo de apartado'?'Recibo · Word y PDF':item.group==='Pagaré'?'Título de crédito · Word y PDF':'Promesa de compraventa · '+item.group;
     button.append(title,subtitle);button.addEventListener('click',()=>selectDocument(item));cards.append(button);
   }
   const preferred=catalog.find(item=>item.group===group && item.id===current?.id)||catalog.find(item=>item.group===group);
@@ -67,7 +67,7 @@ function buildSignaturePads(){
 }
 function photoSlots(){
  const note=current.id==='pagare',receipt=current.id==='recibo-apartado';
- const people=receipt?[['buyer','Comprador'],['seller','Asesor/vendedor']]:[['seller',note?'Suscriptor':'Vendedor'],['buyer',note?'Beneficiario':'Comprador']];
+ const people=current.id==='contrato-exclusiva'?[['buyer','Cliente'],['seller','Profesional']]:receipt?[['buyer','Comprador'],['seller','Asesor/vendedor']]:[['seller',note?'Suscriptor':'Vendedor'],['buyer',note?'Beneficiario':'Comprador']];
  return people.flatMap(([person,label])=>[{key:person+'-front',label:label+' · Frente de INE'},{key:person+'-back',label:label+' · Reverso de INE'}]);
 }
 function photoKey(key){return current.id+'-'+key;}
@@ -131,7 +131,7 @@ async function renderDocument(bytes,isCurrent){
  source.querySelectorAll('style').forEach(style=>preview.append(style.cloneNode(true)));
  source.querySelectorAll('section.docx').forEach(section=>{const holder=document.createElement('div');holder.className='word-sheet';holder.append(section.cloneNode(true));preview.append(holder);});fitPreview();preview.scrollTop=scrollTop;
 }
-function moneyPairs(id){return id==='pagare'?[['amount','amountWords']]:id==='recibo-apartado'?['deposit','price','penalty'].map(key=>[key,key+'Words']):[];}
+function moneyPairs(id){return id==='pagare'?[['amount','amountWords']]:id==='contrato-exclusiva'?[['price','priceWords']]:id==='recibo-apartado'?['deposit','price','penalty'].map(key=>[key,key+'Words']):[];}
 function syncMoneyAmounts(){
  for(const [amount,wordKey]of moneyPairs(current?.id)){
  const input=form.elements[amount],words=form.elements[wordKey],raw=input.value,start=input.selectionStart;

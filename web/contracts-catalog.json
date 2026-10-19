@@ -1770,5 +1770,146 @@
         "default": ""
       }
     ]
+  },
+  {
+    "id": "contrato-exclusiva",
+    "title": "Comercialización y servicios inmobiliarios en exclusiva",
+    "group": "Exclusiva",
+    "template": "templates/contrato-exclusiva.docx",
+    "fields": [
+      {
+        "key": "seller",
+        "label": "Nombre completo del profesional",
+        "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "sellerId",
+        "label": "Identificación del profesional: INE y número",
+        "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "sellerRFC",
+        "label": "RFC del profesional",
+        "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "sellerAddress",
+        "label": "Domicilio del profesional",
+        "group": "Personas",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "buyer",
+        "label": "Nombre completo del cliente / propietario",
+        "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "buyerAddress",
+        "label": "Domicilio del cliente",
+        "group": "Personas",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "buyerPhone",
+        "label": "Teléfono del cliente",
+        "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "propertyAddress",
+        "label": "Dirección completa del inmueble",
+        "group": "Inmueble",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "title",
+        "label": "Escritura o documento que acredita la propiedad",
+        "group": "Inmueble",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "folio",
+        "label": "Folio real del Registro Público",
+        "group": "Inmueble",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "cadastre",
+        "label": "Número de cuenta predial",
+        "group": "Inmueble",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "price",
+        "label": "Precio del inmueble ($)",
+        "group": "Precio y condiciones",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "priceWords",
+        "label": "Precio en letra (automático)",
+        "group": "Precio y condiciones",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "conditions",
+        "label": "Condiciones adicionales del servicio",
+        "group": "Precio y condiciones",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "jurisdiction",
+        "label": "Ciudad y estado para jurisdicción",
+        "group": "Firma y jurisdicción",
+        "type": "text",
+        "default": "CULIACÁN, SINALOA"
+      },
+      {
+        "key": "signCity",
+        "label": "Ciudad y estado de firma",
+        "group": "Firma y jurisdicción",
+        "type": "text",
+        "default": "CULIACÁN, SINALOA"
+      },
+      {
+        "key": "signDay",
+        "label": "Día de firma",
+        "group": "Firma y jurisdicción",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "signMonth",
+        "label": "Mes de firma",
+        "group": "Firma y jurisdicción",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "signYear",
+        "label": "Año de firma (cuatro dígitos)",
+        "group": "Firma y jurisdicción",
+        "type": "text",
+        "default": ""
+      }
+    ]
   }
 ]

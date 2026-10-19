@@ -4,8 +4,8 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {validateContract,groupINEPhotos} from '../web/word-generator.js';
 const catalog=JSON.parse(await readFile(new URL('../web/contracts-catalog.json',import.meta.url),'utf8'));
-test('las ocho plantillas permiten dejar todos los datos pendientes como líneas imprimibles',()=>{
- assert.equal(catalog.length,8);
+test('las nueve plantillas permiten dejar todos los datos pendientes como líneas imprimibles',()=>{
+ assert.equal(catalog.length,9);
  for(const item of catalog){
   const values=validateContract(item,{});
   assert.deepEqual(Object.keys(values),item.fields.map(field=>field.key));
@@ -54,4 +54,14 @@ test('recibo de apartado: importes y letra congruentes, campos vacíos y cláusu
  for(const field of item.fields)assert.ok(xml.includes('{'+field.key+'}'),field.key);
  for(const phrase of ['RECIBO DE APARTADO COMPRA VENTA','PENALIZACIÓN','gastos administrativos y de comercialización','reanudar la venta de la propiedad','Entrega','Recibe'])assert.ok(xml.includes(phrase));
  assert.ok((await readFile('data/originals/recibo-apartado.pdf')).subarray(0,5).toString()==='%PDF-');
+});
+
+test('exclusiva: nueve cláusulas, fundamentos conservados y campos opcionales',async()=>{
+ const item=catalog.find(item=>item.id==='contrato-exclusiva');assert.ok(item);
+ const xml=new PizZip(await readFile('web/'+item.template)).file('word/document.xml').asText();
+ for(const key of item.fields.map(field=>field.key))assert.ok(xml.includes('{'+key+'}'),key);
+ for(const clause of ['PRIMERA','SEGUNDA','TERCERA','CUARTA','QUINTA','SEXTA','SÉPTIMA','OCTAVA','NOVENA'])assert.ok(xml.includes(clause),clause);
+ for(const text of ['Artículo 24','Fracción XVI','90 DIAS','5%','16%','60 días','90 días','50%','3%'])assert.ok(xml.includes(text),text);
+ const filled=validateContract(item,{buyer:'CLIENTE DE PRUEBA',seller:'PROFESIONAL DE PRUEBA',price:'1250000.50'});assert.equal(filled.price,'1,250,000.50');assert.equal(filled.priceWords,'Un millón doscientos cincuenta mil pesos 50/100 m.n.');assert.match(filled.folio,/^_+$/);
+ assert.deepEqual(groupINEPhotos([{person:'seller',face:'front'},{person:'buyer',face:'back'}],item.id).map(group=>group.title),['Cliente','Profesional']);
 });
