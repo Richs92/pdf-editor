@@ -51,3 +51,7 @@ f('price','Precio del inmueble ($)','Precio y condiciones');f('priceWords','Prec
 for key,label,default in [('jurisdiction','Ciudad y estado para jurisdicción','CULIACÁN, SINALOA'),('signCity','Ciudad y estado de firma','CULIACÁN, SINALOA'),('signDay','Día de firma',''),('signMonth','Mes de firma',''),('signYear','Año de firma (cuatro dígitos)','')]:f(key,label,'Firma y jurisdicción',default=default)
 path=Path('web/contracts-catalog.json');catalog=[item for item in json.loads(path.read_text()) if item['id']!='contrato-exclusiva'];catalog.append(dict(id='contrato-exclusiva',title='Comercialización y servicios inmobiliarios en exclusiva',group='Exclusiva',template='templates/contrato-exclusiva.docx',fields=fields));path.write_text(json.dumps(catalog,ensure_ascii=False,indent=2)+'\n')
 assert set(re.findall(r'\{(\w+)\}',source))=={f['key'] for f in fields}
+
+# Regenerate the two-owner derivative as well.
+import runpy
+runpy.run_path("scripts/prepare-exclusiva-dos.py", run_name="__main__")

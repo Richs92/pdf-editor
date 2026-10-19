@@ -4,7 +4,7 @@ const R = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
 const escapeXML = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
 export function validateContract(contract, data) {
   if(contract.id==='pagare')data={...data,...pagareAmount(data.amount)};
-  if(['recibo-apartado','contrato-exclusiva'].includes(contract.id)){data={...data};for(const key of (contract.id==='contrato-exclusiva'?['price']:['deposit','price','penalty'])){const value=pagareAmount(data[key]);data[key]=value.amount;data[key+'Words']=value.amountWords;}}
+  if(['recibo-apartado','contrato-exclusiva','contrato-exclusiva-dos'].includes(contract.id)){data={...data};for(const key of (contract.id.startsWith('contrato-exclusiva')?['price']:['deposit','price','penalty'])){const value=pagareAmount(data[key]);data[key]=value.amount;data[key+'Words']=value.amountWords;}}
   const values = {};
   for (const field of contract.fields) {
     const value = String(data[field.key] ?? '').trim();
@@ -68,10 +68,10 @@ function photoXML(id, relationship, width, height) {
   return `<w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:drawing><wp:inline xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${id}" name="INE ${id}"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${id}" name="INE ${id}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip xmlns:r="${R}" r:embed="${relationship}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>`;
 }
 export function groupINEPhotos(photos,documentId){
-  return (['recibo-apartado','contrato-exclusiva'].includes(documentId)?['buyer','seller']:['seller','buyer']).flatMap(person=>{
+  return (documentId==='contrato-exclusiva-dos'?['buyer','buyer2','seller']:['recibo-apartado','contrato-exclusiva'].includes(documentId)?['buyer','seller']:['seller','buyer']).flatMap(person=>{
     const selected=photos.filter(photo=>(photo.person||(/^(Vendedor|Suscriptor|Asesor|Profesional)/.test(photo.label)?'seller':'buyer'))===person)
       .sort((a,b)=>(a.face||(/Frente/.test(a.label)?'front':'back'))==='front'?-1:1);
-    const title=documentId==='contrato-exclusiva'?(person==='buyer'?'Cliente':'Profesional'):documentId==='pagare'?(person==='seller'?'Suscriptor':'Beneficiario'):(person==='seller'?(documentId==='recibo-apartado'?'Asesor/vendedor':'Vendedor'):'Comprador');
+    const title=documentId==='contrato-exclusiva-dos'?({buyer:'Propietario 1',buyer2:'Propietario 2',seller:'Profesional'}[person]):documentId==='contrato-exclusiva'?(person==='buyer'?'Cliente':'Profesional'):documentId==='pagare'?(person==='seller'?'Suscriptor':'Beneficiario'):(person==='seller'?(documentId==='recibo-apartado'?'Asesor/vendedor':'Vendedor'):'Comprador');
     return selected.length?[{person,title,photos:selected}]:[];
   });
 }
@@ -112,7 +112,7 @@ export async function generateWord(templateBytes, contract, data, photos=[], sig
     zip.file(relPath,new XMLSerializer().serializeToString(rels));
     zip.file('[Content_Types].xml',new XMLSerializer().serializeToString(types));
   }
-  if(contract.id==='recibo-apartado')addSignatures(zip,values,signatures);
+  if(['recibo-apartado','contrato-exclusiva-dos'].includes(contract.id))addSignatures(zip,values,signatures,contract.id);
   addPageNumbers(zip);
   return zip.generate({type:'uint8array',compression:'DEFLATE'});
 }
@@ -134,11 +134,11 @@ function addPageNumbers(zip){
  for(const [path,xml]of [['word/document.xml',doc],['word/_rels/document.xml.rels',rels],['[Content_Types].xml',types]])zip.file(path,new XMLSerializer().serializeToString(xml));
 }
 
-function addSignatures(zip,values,signatures){
+function addSignatures(zip,values,signatures,documentId){
  const doc=parseXML(zip.file('word/document.xml').asText()),rels=parseXML(zip.file('word/_rels/document.xml.rels').asText()),types=parseXML(zip.file('[Content_Types].xml').asText());
- for(const [index,person,label]of [[0,'buyer','Entrega'],[1,'seller','Recibe']]){
+ for(const [index,person,label]of (documentId==='contrato-exclusiva-dos'?[[0,'buyer','PROPIETARIO 1'],[1,'buyer2','PROPIETARIO 2'],[2,'seller','EL PROFESIONAL']]:[[0,'buyer','Entrega'],[1,'seller','Recibe']])){
   const signature=signatures[person];if(!signature)continue;
-  const cell=[...doc.getElementsByTagNameNS(W,'tc')].find(cell=>cell.textContent.trim().endsWith(label));if(!cell)throw Error('No se encontró el espacio de firma de '+label+'.');
+  const cell=[...doc.getElementsByTagNameNS(W,'tc')].find(cell=>documentId==='contrato-exclusiva-dos'?[...cell.getElementsByTagNameNS(W,'bookmarkStart')].some(mark=>mark.getAttributeNS(W,'name')==='TerminavitSignature_'+person):cell.textContent.trim().endsWith(label));if(!cell)throw Error('No se encontró el espacio de firma de '+label+'.');
   const id='rIdTerminavitSignature'+index,target='media/terminavit-signature-'+person+'.png';zip.file('word/'+target,signature.bytes);
   const rel=rels.createElementNS(rels.documentElement.namespaceURI,'Relationship');rel.setAttribute('Id',id);rel.setAttribute('Type',R+'/image');rel.setAttribute('Target',target);rels.documentElement.append(rel);
   const scale=Math.min(2.2*914400/signature.width,.65*914400/signature.height);

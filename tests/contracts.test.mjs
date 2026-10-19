@@ -4,8 +4,8 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {validateContract,groupINEPhotos} from '../web/word-generator.js';
 const catalog=JSON.parse(await readFile(new URL('../web/contracts-catalog.json',import.meta.url),'utf8'));
-test('las nueve plantillas permiten dejar todos los datos pendientes como líneas imprimibles',()=>{
- assert.equal(catalog.length,9);
+test('las diez plantillas permiten dejar todos los datos pendientes como líneas imprimibles',()=>{
+ assert.equal(catalog.length,10);
  for(const item of catalog){
   const values=validateContract(item,{});
   assert.deepEqual(Object.keys(values),item.fields.map(field=>field.key));
@@ -64,4 +64,13 @@ test('exclusiva: nueve cláusulas, fundamentos conservados y campos opcionales',
  for(const text of ['Artículo 24','Fracción XVI','90 DIAS','5%','16%','60 días','90 días','50%','3%'])assert.ok(xml.includes(text),text);
  const filled=validateContract(item,{buyer:'CLIENTE DE PRUEBA',seller:'PROFESIONAL DE PRUEBA',price:'1250000.50'});assert.equal(filled.price,'1,250,000.50');assert.equal(filled.priceWords,'Un millón doscientos cincuenta mil pesos 50/100 m.n.');assert.match(filled.folio,/^_+$/);
  assert.deepEqual(groupINEPhotos([{person:'seller',face:'front'},{person:'buyer',face:'back'}],item.id).map(group=>group.title),['Cliente','Profesional']);
+});
+
+test('exclusiva dos propietarios: parte cliente conjunta, campos y anexos separados',async()=>{
+ const item=catalog.find(item=>item.id==='contrato-exclusiva-dos');assert.ok(item);const xml=new PizZip(await readFile('web/'+item.template)).file('word/document.xml').asText();
+ for(const field of item.fields)assert.ok(xml.includes('{'+field.key+'}'),field.key);
+ assert.ok(xml.includes('CONJUNTAMENTE COMO'));assert.ok(xml.includes('legítimos copropietarios'));for(const person of ['buyer','buyer2','seller'])assert.ok(xml.includes('TerminavitSignature_'+person));
+ const groups=groupINEPhotos([{person:'seller',face:'front'},{person:'buyer2',face:'back'},{person:'buyer2',face:'front'},{person:'buyer',face:'front'}],item.id);assert.deepEqual(groups.map(g=>g.title),['Propietario 1','Propietario 2','Profesional']);assert.deepEqual(groups[1].photos.map(p=>p.face),['front','back']);
+ const values=validateContract(item,{buyer:'PRIMER PROPIETARIO',buyer2:'SEGUNDO PROPIETARIO',price:'1000000'});assert.equal(values.priceWords,'Un millón de pesos m.n.');assert.equal(values.buyer2,'SEGUNDO PROPIETARIO');
+ const original=catalog.find(item=>item.id==='contrato-exclusiva');assert.ok(!original.fields.some(f=>f.key==='buyer2'));
 });

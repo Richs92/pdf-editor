@@ -1773,7 +1773,7 @@
   },
   {
     "id": "contrato-exclusiva",
-    "title": "Comercialización y servicios inmobiliarios en exclusiva",
+    "title": "Exclusiva · un propietario",
     "group": "Exclusiva",
     "template": "templates/contrato-exclusiva.docx",
     "fields": [
@@ -1823,6 +1823,182 @@
         "key": "buyerPhone",
         "label": "Teléfono del cliente",
         "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "propertyAddress",
+        "label": "Dirección completa del inmueble",
+        "group": "Inmueble",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "title",
+        "label": "Escritura o documento que acredita la propiedad",
+        "group": "Inmueble",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "folio",
+        "label": "Folio real del Registro Público",
+        "group": "Inmueble",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "cadastre",
+        "label": "Número de cuenta predial",
+        "group": "Inmueble",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "price",
+        "label": "Precio del inmueble ($)",
+        "group": "Precio y condiciones",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "priceWords",
+        "label": "Precio en letra (automático)",
+        "group": "Precio y condiciones",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "conditions",
+        "label": "Condiciones adicionales del servicio",
+        "group": "Precio y condiciones",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "jurisdiction",
+        "label": "Ciudad y estado para jurisdicción",
+        "group": "Firma y jurisdicción",
+        "type": "text",
+        "default": "CULIACÁN, SINALOA"
+      },
+      {
+        "key": "signCity",
+        "label": "Ciudad y estado de firma",
+        "group": "Firma y jurisdicción",
+        "type": "text",
+        "default": "CULIACÁN, SINALOA"
+      },
+      {
+        "key": "signDay",
+        "label": "Día de firma",
+        "group": "Firma y jurisdicción",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "signMonth",
+        "label": "Mes de firma",
+        "group": "Firma y jurisdicción",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "signYear",
+        "label": "Año de firma (cuatro dígitos)",
+        "group": "Firma y jurisdicción",
+        "type": "text",
+        "default": ""
+      }
+    ]
+  },
+  {
+    "id": "contrato-exclusiva-dos",
+    "title": "Exclusiva · dos propietarios",
+    "group": "Exclusiva",
+    "template": "templates/contrato-exclusiva-dos.docx",
+    "fields": [
+      {
+        "key": "seller",
+        "label": "Nombre completo del profesional",
+        "group": "Profesional",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "sellerId",
+        "label": "Identificación del profesional: INE y número",
+        "group": "Profesional",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "sellerRFC",
+        "label": "RFC del profesional",
+        "group": "Profesional",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "sellerAddress",
+        "label": "Domicilio del profesional",
+        "group": "Profesional",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "buyer",
+        "label": "Nombre completo del propietario 1",
+        "group": "Propietario 1",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "buyerAddress",
+        "label": "Domicilio del propietario 1",
+        "group": "Propietario 1",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "buyerPhone",
+        "label": "Teléfono del propietario 1",
+        "group": "Propietario 1",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "buyerId",
+        "label": "Identificación del propietario 1: INE y número",
+        "group": "Propietario 1",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "buyer2",
+        "label": "Nombre completo del propietario 2",
+        "group": "Propietario 2",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "buyer2Id",
+        "label": "Identificación del propietario 2: INE y número",
+        "group": "Propietario 2",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "buyer2Address",
+        "label": "Domicilio del propietario 2",
+        "group": "Propietario 2",
+        "type": "textarea",
+        "default": ""
+      },
+      {
+        "key": "buyer2Phone",
+        "label": "Teléfono del propietario 2",
+        "group": "Propietario 2",
         "type": "text",
         "default": ""
       },
