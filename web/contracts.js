@@ -1,5 +1,6 @@
 import {authorize,recordEvent} from './session.js';
 await authorize('contracts');
+import {archivePDF} from './document-archive.js';
 import {commissionTerms} from './exclusiva-terms.js';
 import {contractPDFPreview} from './contract-pdf-preview.js';
 import {generateContractPDF} from './contract-pdf.js';
@@ -234,7 +235,7 @@ $('#whatsapp-share').addEventListener('click',()=>{
 });
 
 function download(blob,filename){const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=filename;link.click();setTimeout(()=>URL.revokeObjectURL(url),30000);}
-async function wordDownload(format='docx'){if(!generated)return;const ready=generated;await logGeneration(ready);await recordEvent('contracts','document_downloaded',{documentId:ready.id,format});if(generated!==ready)throw Error('El documento cambió. Vuelve a prepararlo.');download(new Blob([generated.bytes],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}),generated.id+'-llenado.docx');}
+async function wordDownload(format='docx'){if(!generated)return;const ready=generated;await logGeneration(ready);await archivePDF(await pdfForReady(ready),'contracts',{documentId:ready.id,format});if(generated!==ready)throw Error('El documento cambió. Vuelve a prepararlo.');download(new Blob([generated.bytes],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}),generated.id+'-llenado.docx');}
 $('#word-download').addEventListener('click',()=>wordDownload().catch(error=>status.textContent=error.message));
 $('#google-download').addEventListener('click',async()=>{try{await wordDownload('google-docs');status.textContent='Word descargado. Súbelo a Google Drive y selecciona “Abrir con → Documentos de Google”. Los anexos están incluidos.';}catch(error){status.textContent=error.message;}});
 $('#print-document').addEventListener('click',async()=>{
@@ -248,7 +249,7 @@ $('#print-document').addEventListener('click',async()=>{
  }
  let view;const ready=generated;lock(true);
  try{
-  view=openPrintWindow();view.stage('Generando el PDF con firmas y anexos…');const pdf=await view.wait(pdfForReady(ready));if(generated!==ready)throw Error('El documento cambió. Espera la vista previa actualizada y vuelve a imprimir.');
+  view=openPrintWindow({module:'contracts',documentId:ready.id});view.stage('Generando el PDF con firmas y anexos…');const pdf=await view.wait(pdfForReady(ready));if(generated!==ready)throw Error('El documento cambió. Espera la vista previa actualizada y vuelve a imprimir.');
   await view.wait(logGeneration(ready));await view.wait(recordEvent('contracts','document_print_requested',{documentId:ready.id,format:'pdf'}));
   if(generated!==ready)throw Error('El documento cambió. Vuelve a imprimir la versión actualizada.');
   await view.show(pdf,ready.id+'-llenado.pdf');status.textContent='Impresión solicitada. Selecciona la impresora en el menú del dispositivo.';
@@ -261,7 +262,7 @@ $('#pdf-download').addEventListener('click',async()=>{
   if(version!==sourceVersion){status.textContent='Hay cambios nuevos. Vuelve a preparar el documento.';return;}
   await logGeneration(prepared);
   if(version!==sourceVersion)throw Error('El documento cambió. Espera a que se actualice la vista previa.');
-  await recordEvent('contracts','document_downloaded',{documentId:prepared.id,format:'pdf'});
+  await archivePDF(result,'contracts',{documentId:prepared.id,format:'pdf'});
   if(version!==sourceVersion)throw Error('El documento cambió. Vuelve a prepararlo.');
   download(result,prepared.id+'-llenado.pdf');status.textContent='PDF descargado con los datos y anexos incluidos.';
  }catch(error){status.textContent='No se pudo generar el PDF. Puedes descargar el Word. '+error.message;}finally{lock(false);if(!generated)schedulePreview(0);}

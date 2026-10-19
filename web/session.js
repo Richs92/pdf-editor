@@ -1,3 +1,4 @@
+import {archivePDF} from './document-archive.js';
 export const moduleInfo={contracts:{title:'Contratos y pagaré',path:'/contracts.html',icon:'▤',description:'Seis contratos y pagaré, con anexos de identificación.'},cfe:{title:'CFE',path:'/cfe.html',icon:'ϟ',description:'Datos del recibo de electricidad y fechas del periodo.'},water:{title:'Agua',path:'/water.html',icon:'◉',description:'Recibo de agua, categoría y fechas de facturación.'},predial:{title:'Predial',path:'/predial.html',icon:'⌂',description:'Clave catastral y las dos copias del recibo.'}};
 const API='/.netlify/functions/api';
 export async function api(path,{method='GET',body,redirect=true}={}){
@@ -33,9 +34,9 @@ export const recordEvent=(module,action,details={})=>api('/audit',{method:'POST'
 export function guardDownload(anchor,module,details={}){
  let downloading=false;
  anchor.addEventListener('click',async event=>{
-  event.preventDefault();if(downloading||anchor.hidden)return;downloading=true;
-  const href=anchor.href;
-  try{await recordEvent(module,'document_downloaded',{format:'pdf',...details});if(anchor.href!==href||anchor.hidden)throw Error('El documento cambió. Actualiza la vista previa.');const link=document.createElement('a');link.href=href;link.download=anchor.download;link.click();}
+  event.preventDefault();if(downloading||anchor.hidden||anchor.style.display==='none')return;downloading=true;
+  const href=anchor.href,status=document.querySelector('#status');if(status)status.textContent='Guardando copia privada y preparando descarga…';
+  try{const response=await fetch(href);if(!response.ok)throw Error('No se pudo preparar el PDF.');const pdf=await response.blob();await archivePDF(pdf,module,{format:'pdf',...details});if(anchor.href!==href||anchor.hidden||anchor.style.display==='none')throw Error('El documento cambió. Actualiza la vista previa.');const link=document.createElement('a');link.href=href;link.download=anchor.download;link.click();if(status)status.textContent='Descarga solicitada. Copia privada guardada para el administrador.';}
   catch(error){const status=document.querySelector('#status');if(status)status.textContent=error.message;}
   finally{downloading=false;}
  });

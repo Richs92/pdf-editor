@@ -73,7 +73,7 @@ La web mostrará el Home después de iniciar sesión. CFE cambia a `/cfe.html`; 
 
 El servidor registra accesos correctos/fallidos, entradas a secciones, alta y modificación de usuarios, cambios de permisos, contraseñas restablecidas y cambios de contraseña. El navegador reporta generación y solicitud de descarga de documentos, con tipo de documento y formato.
 
-No se guardan contraseñas, contenido de formularios, archivos generados ni fotos de INE. Los eventos del navegador no prueban que un archivo se guardó físicamente: el log indica su origen. Un administrador de la web puede consultar el registro, pero no modificarlo ni borrarlo desde la aplicación. El propietario de la base de datos conserva el control de su infraestructura.
+No se guardan contraseñas en el log. Cada descarga nueva archiva un PDF privado con el contenido y anexos incluidos; el administrador puede abrirlo en “Ver documento”. El bucket privado de Supabase Storage se crea automáticamente con la clave service_role existente. Los registros anteriores no contienen archivos. Los eventos del navegador no prueban que un archivo se guardó físicamente: el log indica su origen. Un administrador de la web puede consultar el registro, pero no modificarlo ni borrarlo desde la aplicación. El propietario de la base de datos conserva el control de su infraestructura.
 
 ## Límites y recuperación
 

@@ -1,4 +1,4 @@
-import {randomBytes,createHash,timingSafeEqual} from 'node:crypto';
+import {randomBytes,randomUUID,createHash,timingSafeEqual} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {resolve,extname} from 'node:path';
 import {MODULES,PAGES,allowedModules,canAccess,contentModule} from '../lib/access.mjs';
@@ -32,6 +32,20 @@ async function supabase(path,{method='GET',body,token,headers={}}={}){
   message+=' [HTTP '+response.status+' · '+safeCode+' · '+operation+']';
   const error=new HTTPError(status,message);error.upstream=result;throw error;}
  return result;
+}
+const DOCUMENT_BUCKET='terminavit-documentos-privados',MAX_DOCUMENT_BYTES=3*1024*1024;
+async function storage(path,{method='GET',body,type='application/json'}={}){
+ const config=settings();try{return await fetch(config.url+'/storage/v1/'+path,{method,headers:{apikey:config.key,Authorization:'Bearer '+config.key,'Content-Type':type},body,signal:AbortSignal.timeout(20000)});}catch{throw new HTTPError(503,'No se pudo conectar al archivo privado. Intenta de nuevo.');}
+}
+async function ensureDocumentBucket(){
+ let response=await storage('bucket/'+DOCUMENT_BUCKET);
+ if(response.status===404){
+  const created=await storage('bucket',{method:'POST',body:JSON.stringify({id:DOCUMENT_BUCKET,name:DOCUMENT_BUCKET,public:false,file_size_limit:MAX_DOCUMENT_BYTES,allowed_mime_types:['application/pdf']})});
+  if(!created.ok&&![400,409].includes(created.status))throw new HTTPError(503,'No se pudo crear el archivo privado en Supabase Storage. Revisa los permisos de la clave service_role.');
+  response=await storage('bucket/'+DOCUMENT_BUCKET);
+ }
+ if(!response.ok)throw new HTTPError(503,'No se pudo acceder al archivo privado de Supabase Storage.');
+ const bucket=await response.json();if(bucket.public!==false)throw new HTTPError(503,'El archivo de documentos debe ser privado. Corrige el bucket en Supabase Storage.');
 }
 const rpc=(name,body)=>supabase('/rest/v1/rpc/'+name,{method:'POST',body});
 function cookies(event){return Object.fromEntries((event.headers?.cookie||'').split(';').filter(part=>part.includes('=')).map(part=>{const i=part.indexOf('=');return[part.slice(0,i).trim(),part.slice(i+1).trim()];}));}
@@ -149,7 +163,30 @@ export async function handler(event){
    if(data.format){if(!['pdf','docx','google-docs'].includes(data.format))throw new HTTPError(400,'Formato no válido.');details.format=data.format;}
    await audit(context,data.action,data.module,null,details,'browser');return json(context,200,{ok:true});
   }
+  if(path==='/documents/archive'&&method==='POST'){
+   const data=event.queryStringParameters||{};requireModule(context,data.module);
+   if(!['pdf','docx','google-docs'].includes(data.format))throw new HTTPError(400,'Formato no válido.');
+   if(data.documentId&&!/^[a-z-]{1,60}$/.test(data.documentId))throw new HTTPError(400,'Documento no válido.');
+   if(!(event.headers?.['content-type']||'').startsWith('application/pdf'))throw new HTTPError(415,'Envía un PDF para el archivo privado.');
+   const bytes=Buffer.from(event.body||'',event.isBase64Encoded?'base64':'utf8');
+   if(bytes.length>MAX_DOCUMENT_BYTES)throw new HTTPError(413,'El PDF supera 3 MB. Reduce el tamaño de las fotos antes de descargar.');
+   if(bytes.length<10||bytes.subarray(0,5).toString()!=='%PDF-')throw new HTTPError(400,'El archivo no es un PDF válido.');
+   await ensureDocumentBucket();const id=randomUUID(),object=DOCUMENT_BUCKET+'/'+id+'.pdf';
+   const saved=await storage('object/'+object,{method:'POST',body:bytes,type:'application/pdf'});
+   if(!saved.ok)throw new HTTPError(503,'No se pudo guardar la copia privada. Intenta descargar de nuevo.');
+   try{await audit(context,'document_downloaded',data.module,null,{archiveId:id,format:data.format,archiveFormat:'pdf',...(data.documentId?{documentId:data.documentId}:{} )},'server');}
+   catch(error){await storage('object/'+DOCUMENT_BUCKET,{method:'DELETE',body:JSON.stringify({prefixes:[id+'.pdf']})}).catch(()=>{});throw error;}
+   return json(context,201,{archiveId:id});
+  }
   requireAdmin(context);
+  const archived=path.match(/^\/admin\/documents\/([0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i);
+  if(archived&&method==='GET'){
+   const response=await storage('object/'+DOCUMENT_BUCKET+'/'+archived[1]+'.pdf');
+   if(response.status===404)throw new HTTPError(404,'No se encontró la copia del documento.');
+   if(!response.ok)throw new HTTPError(503,'No se pudo abrir el documento. Intenta de nuevo.');
+   const bytes=Buffer.from(await response.arrayBuffer());await audit(context,'document_viewed',null,null,{archiveId:archived[1]},'server');
+   return {statusCode:200,headers:{'Content-Type':'application/pdf','Content-Disposition':'inline; filename="documento.pdf"','Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'},...(context.cookies.length?{multiValueHeaders:{'Set-Cookie':context.cookies}}:{}),body:bytes.toString('base64'),isBase64Encoded:true};
+  }
   if(path==='/admin/users'&&method==='GET'){
    const users=await supabase('/rest/v1/app_users?select=id,email,display_name,role,active,must_change_password,created_at,app_permissions(module)&order=created_at.desc&limit=500');
    return json(context,200,{users:(users||[]).map(({app_permissions:permissions,...user})=>({...publicUser(user),modules:allowedModules(user,(permissions||[]).map(p=>p.module))}))});

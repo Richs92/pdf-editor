@@ -88,7 +88,7 @@ const sample={seller:'ANA PÉREZ GARCÍA',buyer:'LUIS LÓPEZ RUIZ',sellerId:'INE
   }
   console.log(item.id+': datos completos, vacíos con líneas, Word, PDF y vista móvil correctos');
  }
- assert.deepEqual(errors,[]);assert.ok(uploads.every(url=>url.includes('/.netlify/functions/api/')), 'Solo se envían autenticación y eventos; no documentos ni imágenes');assert.ok(!JSON.stringify(app.state.logs).includes(sample.seller));
+ assert.deepEqual(errors,[]);assert.ok(uploads.every(url=>url.includes('/.netlify/functions/api/')), 'Solo se usa la API propia para autenticación, eventos y copias PDF privadas');assert.ok(!JSON.stringify(app.state.logs).includes(sample.seller));assert.ok(app.state.documents.size>0);
  // Data and pictures remain in memory, never in persistent browser storage.
  assert.equal(await page.evaluate(()=>localStorage.length+sessionStorage.length),0);
  await page.setViewportSize({width:1360,height:1000});

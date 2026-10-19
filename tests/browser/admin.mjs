@@ -1,5 +1,5 @@
 import {chromium} from 'playwright';
-import {mkdir} from 'node:fs/promises';
+import {mkdir,readFile} from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import {startTestApp,browserLogin} from '../helpers/test-app.mjs';
 const app=await startTestApp();
@@ -25,9 +25,11 @@ try{
  const blocked=await staff.goto(app.url+'/cfe.html');assert.equal(blocked.status(),403);
  await staff.goto(app.url+'/water.html');await staff.locator('#status').filter({hasText:'Recibo listo.'}).waitFor();
  await staff.getByLabel('Nombre',{exact:true}).fill('EJEMPLO PRIVADO QUE NO SE DEBE REGISTRAR');await staff.getByRole('button',{name:'Actualizar vista previa',exact:true}).click();await staff.locator('#status').filter({hasText:'Recibo listo.'}).waitFor();
- const download=staff.waitForEvent('download');await staff.locator('#download').click();assert.ok((await download).suggestedFilename().endsWith('.pdf'));
+ const download=staff.waitForEvent('download');await staff.locator('#download').click();const received=await download;assert.ok(received.suggestedFilename().endsWith('.pdf'));await received.saveAs('artifacts/admin/archivo-descargado.pdf');
  await admin.getByRole('button',{name:'Log de actividad',exact:true}).click();await admin.locator('#logs tr').first().waitFor();await admin.getByLabel('Sección',{exact:true}).selectOption('water');await admin.getByRole('button',{name:'Consultar',exact:true}).click();await admin.locator('#logs').getByText('ana.operadora',{exact:true}).first().waitFor();
  assert.ok((await admin.locator('#logs').innerText()).includes('Solicitó descargar un documento'));
+ const archived=admin.locator('#logs').getByRole('link',{name:'Ver documento',exact:true}).first();await archived.waitFor({state:'visible'});const href=await archived.getAttribute('href');
+ const adminFile=await admin.request.get(app.url+href);assert.equal(adminFile.status(),200);assert.deepEqual(await adminFile.body(),await readFile('artifacts/admin/archivo-descargado.pdf'));assert.match(adminFile.headers()['content-type'],/application\/pdf/);assert.equal((await staff.request.get(app.url+href)).status(),403);
  assert.ok(!JSON.stringify(app.state.logs).includes('EJEMPLO PRIVADO'));
  assert.ok(!JSON.stringify(app.state.logs).includes(password));
  await admin.screenshot({path:'artifacts/admin/log.png',fullPage:true});

@@ -1,10 +1,11 @@
+import {archivePDF} from './document-archive.js';
 import {supportsPDFSharing} from './share-document.js';
 import {recordEvent} from './session.js';
 export function usesNativePDFPrinting(nav=navigator){return /iPad|iPhone|iPod/.test(nav.userAgent)||(nav.platform==='MacIntel'&&nav.maxTouchPoints>1);}
 export const supportsDirectPrinting=()=>usesNativePDFPrinting()&&supportsPDFSharing();
 export const shareForPrinting=file=>navigator.share({files:[file],title:'Imprimir documento'});
 // Keep preparation in the active tab: iOS can suspend an opener behind a new tab.
-export function openPrintWindow(){
+export function openPrintWindow({module,documentId}={}){
  const dialog=document.createElement('dialog');dialog.className='document-print-dialog';dialog.style.cssText='position:fixed;inset:0;width:100%;max-width:100%;height:100%;max-height:100%;padding:0;border:0;margin:0;background:white';
  const close=document.createElement('button');close.type='button';close.textContent='Cerrar impresión';close.style.cssText='display:block;width:100%;padding:14px;border:0;background:#192b36;color:white;font:16px system-ui';
  const frame=document.createElement('iframe');frame.title='Documento listo para imprimir';frame.style.cssText='display:block;width:100%;height:calc(100% - 48px);border:0;background:white';dialog.append(close,frame);document.body.append(dialog);dialog.showModal();
@@ -33,6 +34,11 @@ export function openPrintWindow(){
   async show(blob,filename='documento.pdf'){
    check();stage('Cargando el documento para imprimir…');
    url=window.URL.createObjectURL(blob);const link=doc.createElement('a');link.href=url;link.download=filename;link.textContent='Descargar PDF';toolbar.append(link);
+   let downloading=false;link.addEventListener('click',async event=>{
+    event.preventDefault();if(downloading)return;downloading=true;link.textContent='Guardando copia privada…';
+    try{await archivePDF(blob,module,{documentId});if(!dialog.isConnected)throw Error('Impresión cerrada.');const save=doc.createElement('a');save.href=url;save.download=filename;save.click();}catch(error){message.textContent=error.message;}finally{downloading=false;link.textContent='Descargar PDF';}
+   });
+
    if(usesNativePDFPrinting()){
     // iOS may print the parent page instead of an iframe. Open the actual PDF
     // from an explicit tap after generation, with no HTML or raster conversion.
@@ -88,7 +94,7 @@ export function installPDFPrinting(anchor,module,status){
    if(outcomes[1].status==='rejected')status.textContent+=' No se pudo registrar la solicitud.';sync();return;
   }
   let view;const href=anchor.href;button.disabled=true;
-  try{view=openPrintWindow();const response=await view.wait(fetch(href));if(!response.ok)throw Error('No se pudo preparar el PDF.');const blob=await view.wait(response.blob());await view.wait(recordEvent(module,'document_print_requested',{format:'pdf'}));if(!available()||anchor.href!==href)throw Error('El documento cambió. Actualiza la vista previa y vuelve a imprimir.');await view.show(blob,anchor.download);status.textContent='Se solicitó la impresión. El dispositivo permite seleccionar la impresora; la app no confirma que se haya impreso.';}
+  try{view=openPrintWindow({module});const response=await view.wait(fetch(href));if(!response.ok)throw Error('No se pudo preparar el PDF.');const blob=await view.wait(response.blob());await view.wait(recordEvent(module,'document_print_requested',{format:'pdf'}));if(!available()||anchor.href!==href)throw Error('El documento cambió. Actualiza la vista previa y vuelve a imprimir.');await view.show(blob,anchor.download);status.textContent='Se solicitó la impresión. El dispositivo permite seleccionar la impresora; la app no confirma que se haya impreso.';}
   catch(error){view?.fail(error);status.textContent=error.message;}finally{button.disabled=false;sync();}
  });
 }
