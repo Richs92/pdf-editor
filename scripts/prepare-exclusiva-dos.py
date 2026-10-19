@@ -31,6 +31,8 @@ for index,(key,label) in enumerate([('buyer','PROPIETARIO 1'),('buyer2','PROPIET
  mark=OxmlElement('w:bookmarkStart');mark.set(qn('w:id'),str(800+index));mark.set(qn('w:name'),'TerminavitSignature_'+key);p._p.append(mark)
  p.add_run('________________________\n“'+label+'”\nNombre: {'+key+'}')
  end=OxmlElement('w:bookmarkEnd');end.set(qn('w:id'),str(800+index));p._p.append(end)
+import runpy
+runpy.run_path('scripts/exclusiva-layout.py')['apply_layout'](doc)
 doc.save('web/templates/contrato-exclusiva-dos.docx')
 p=Path('web/contracts-catalog.json');catalog=json.loads(p.read_text());base=next(x for x in catalog if x['id']=='contrato-exclusiva');base['title']='Exclusiva · un propietario';fields=[dict(f) for f in base['fields']]
 for f in fields:

@@ -11,14 +11,14 @@ try{
  for(let i=0;i<3;i++){
   const card=page.locator('.signature-card').nth(i),canvas=card.locator('canvas');await canvas.scrollIntoViewIfNeeded();const b=await canvas.boundingBox();await page.mouse.move(b.x+b.width*.15,b.y+b.height*.5);await page.mouse.down();await page.mouse.move(b.x+b.width*.4,b.y+b.height*.2,{steps:6});await page.mouse.move(b.x+b.width*.8,b.y+b.height*.8,{steps:6});await page.mouse.up();await card.getByRole('button',{name:'Usar firma',exact:true}).click();
  }
- await page.waitForFunction(()=>document.querySelectorAll('#document-preview img').length===9&&document.querySelector('#preview-state').textContent==='Vista previa actualizada');await mkdir('artifacts/signatures',{recursive:true});
+ await page.waitForFunction(()=>document.querySelectorAll('#document-preview canvas').length>=5&&document.querySelector('#preview-state').textContent==='Vista previa actualizada');await mkdir('artifacts/signatures',{recursive:true});
  let download=page.waitForEvent('download');await page.locator('#word-download').click();await(await download).saveAs('artifacts/signatures/exclusiva-dos.docx');
  const zip=new PizZip(await readFile('artifacts/signatures/exclusiva-dos.docx')),xml=zip.file('word/document.xml').asText();assert.equal((xml.match(/TerminavitINE/g)||[]).length,3);
  for(const key of ['buyer','buyer2','seller'])assert.ok(zip.file('word/media/terminavit-signature-'+key+'.png'));
  const cells=await page.evaluate(text=>{const ns='http://schemas.openxmlformats.org/wordprocessingml/2006/main',doc=new DOMParser().parseFromString(text,'application/xml');return [...doc.getElementsByTagNameNS(ns,'tc')].filter(c=>/PROPIETARIO 1|PROPIETARIO 2|EL PROFESIONAL/.test(c.textContent)).map(c=>({text:c.textContent,images:c.getElementsByTagNameNS(ns,'drawing').length}));},xml);
  assert.equal(cells.length,3);assert.ok(cells.every(c=>c.images===1));assert.ok(cells[0].text.includes('ANA PROPIETARIA UNO'));assert.ok(cells[1].text.includes('LUIS PROPIETARIO DOS'));assert.ok(cells[2].text.includes('PROFESIONAL TRES'));
  download=page.waitForEvent('download');await page.locator('#pdf-download').click();await(await download).saveAs('artifacts/signatures/exclusiva-dos.pdf');
- await page.locator('#field-buyer2').evaluate(el=>el.closest('details').open=true);await page.locator('#field-buyer2').fill('CAMBIO DEL SEGUNDO PROPIETARIO');await page.waitForFunction(()=>document.querySelectorAll('#document-preview img').length===6);
+ await page.locator('#field-buyer2').evaluate(el=>el.closest('details').open=true);await page.locator('#field-buyer2').fill('CAMBIO DEL SEGUNDO PROPIETARIO');await page.waitForFunction(()=>document.querySelector('#preview-state').textContent==='Vista previa actualizada'&&document.querySelector('#document-preview').textContent.includes('CAMBIO DEL SEGUNDO PROPIETARIO'));
  await page.locator('[data-id="contrato-exclusiva"]').click();assert.equal(await page.locator('.photo-card').count(),4);assert.equal(await page.locator('#signature-section').isVisible(),false);assert.deepEqual(errors,[]);
  console.log('Exclusiva dos propietarios: tres firmas en sus campos, seis caras de INE en tres anexos, Word, PDF y revocación al cambiar datos.');
 }finally{await browser.close();await app.close();}

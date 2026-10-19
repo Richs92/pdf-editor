@@ -13,3 +13,5 @@
 .signature-card{margin-top:16px;padding:12px;border:1px solid #dce5e9;border-radius:10px}.signature-card canvas{display:block;width:100%;height:auto;aspect-ratio:900/330;border:1px dashed #7c8c94;background:white;touch-action:none;margin:12px 0}.signature-card h3{margin:0}
 
 .tabs{flex-wrap:wrap}
+
+.pdf-accessible-text{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}.pdf-export-sheet{padding:0!important;background:white}

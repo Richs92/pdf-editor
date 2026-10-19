@@ -44,10 +44,10 @@ const sample={seller:'ANA PÉREZ GARCÍA',buyer:'LUIS LÓPEZ RUIZ',sellerId:'INE
   }
   await page.getByRole('button',{name:'Actualizar vista previa',exact:true}).click();
   await page.locator('#exports').waitFor({state:'visible',timeout:60000});
-  assert.ok((await page.locator('#document-preview').innerText()).includes(item.id==='pagare'?sample.subscriber:sample.seller));
-  if(item.group==='Exclusiva'){const text=await page.locator('#document-preview').innerText();assert.ok(text.includes('6.5%'));assert.ok(text.includes('Seis punto cinco por ciento'));assert.ok(text.includes('120 días'));}
-  assert.ok(!(await page.locator('#document-preview').innerText()).includes('{seller}'));
-  assert.ok(!(await page.locator('#document-preview').innerText()).includes('DATOS A COMPLETAR ANTES DE FIRMAR'));
+  assert.ok((await page.locator('#document-preview').textContent()).includes(item.id==='pagare'?sample.subscriber:sample.seller));
+  if(item.group==='Exclusiva'){const text=await page.locator('#document-preview').textContent();assert.ok(text.includes('6.5%'));assert.ok(text.includes('Seis punto cinco por ciento'));assert.ok(text.includes('120 días'));}
+  assert.ok(!(await page.locator('#document-preview').textContent()).includes('{seller}'));
+  assert.ok(!(await page.locator('#document-preview').textContent()).includes('DATOS A COMPLETAR ANTES DE FIRMAR'));
   assert.ok(await page.locator('#document-preview section.docx').count()>0);
   const before=await page.evaluate(()=>visualViewport.scale);
   const input=page.locator('#fields input').first();await input.evaluate(el=>{el.closest('details').open=true;});await input.focus();
@@ -60,6 +60,10 @@ const sample={seller:'ANA PÉREZ GARCÍA',buyer:'LUIS LÓPEZ RUIZ',sellerId:'INE
   const documentXML=word.file('word/document.xml').asText();assert.ok(documentXML.includes('rIdTerminavitPageFooter'));
   if(index===0||index===1){const xml=await page.evaluate(text=>{const doc=new DOMParser().parseFromString(text,'application/xml'),ns='http://schemas.openxmlformats.org/wordprocessingml/2006/main';return [...doc.getElementsByTagNameNS(ns,'drawing')].every(drawing=>drawing.parentElement.parentElement.querySelector('jc')?.getAttributeNS(ns,'val')==='center');},documentXML);assert.equal(xml,true);}
   download=page.waitForEvent('download',{timeout:90000});await page.locator('#pdf-download').click();await(await download).saveAs('artifacts/contracts/'+item.id+'.pdf');
+  if(item.group==='Exclusiva'){
+   const pdfBytes=await readFile('artifacts/contracts/'+item.id+'.pdf');
+   const pages=await page.evaluate(async bytes=>{const lib=await import('/vendor/pdf.mjs');lib.GlobalWorkerOptions.workerSrc='/vendor/pdf.worker.mjs';const pdf=await lib.getDocument({data:new Uint8Array(bytes)}).promise;try{return pdf.numPages;}finally{await pdf.destroy();}},[...pdfBytes]);assert.equal(await page.locator('#document-preview canvas').count(),pages);assert.ok(pages>=3);
+  }
   if(item.id==='recibo-apartado'){
    const pdfBytes=await readFile('artifacts/contracts/'+item.id+'.pdf');
    const layout=await page.evaluate(async bytes=>{const lib=await import('/vendor/pdf.mjs');lib.GlobalWorkerOptions.workerSrc='/vendor/pdf.worker.mjs';const pdf=await lib.getDocument({data:new Uint8Array(bytes)}).promise;try{const text=await(await pdf.getPage(1)).getTextContent();return {pages:pdf.numPages,fonts:Object.values(text.styles).map(style=>style.fontFamily),titleSize:Math.abs(text.items.find(item=>item.str==='RECIBO')?.transform[0]||0)};}finally{await pdf.destroy();}},[...pdfBytes]);
@@ -74,13 +78,13 @@ const sample={seller:'ANA PÉREZ GARCÍA',buyer:'LUIS LÓPEZ RUIZ',sellerId:'INE
   await page.evaluate(()=>{for(const el of document.querySelectorAll('#fields input,#fields textarea'))el.value='';document.querySelector('#contract-form').dispatchEvent(new Event('input',{bubbles:true}));});
   assert.equal(await page.locator('#contract-form').evaluate(form=>form.checkValidity()),true);
   await page.getByRole('button',{name:'Actualizar vista previa',exact:true}).click();await page.locator('#exports').waitFor({state:'visible',timeout:60000});
-  const blankPreview=await page.locator('#document-preview').innerText();assert.match(blankPreview,/_{24}/);assert.ok(!/\{[a-zA-Z][a-zA-Z0-9]*\}/.test(blankPreview));
+  const blankPreview=await page.locator('#document-preview').textContent();assert.match(blankPreview,/_{24}/);assert.ok(!/\{[a-zA-Z][a-zA-Z0-9]*\}/.test(blankPreview));
   download=page.waitForEvent('download');await page.locator('#word-download').click();await(await download).saveAs('artifacts/contracts/'+item.id+'-blancos.docx');
   download=page.waitForEvent('download',{timeout:90000});await page.locator('#pdf-download').click();await(await download).saveAs('artifacts/contracts/'+item.id+'-blancos.pdf');
   if(index===0){
    await page.locator('#fields [name="subscriber"]').fill('NOMBRE PARCIAL DE PRUEBA');
    await page.getByRole('button',{name:'Actualizar vista previa',exact:true}).click();await page.locator('#exports').waitFor({state:'visible',timeout:60000});
-   const partial=await page.locator('#document-preview').innerText();assert.ok(partial.includes('NOMBRE PARCIAL DE PRUEBA'));assert.match(partial,/_{24}/);
+   const partial=await page.locator('#document-preview').textContent();assert.ok(partial.includes('NOMBRE PARCIAL DE PRUEBA'));assert.match(partial,/_{24}/);
   }
   console.log(item.id+': datos completos, vacíos con líneas, Word, PDF y vista móvil correctos');
  }

@@ -19,7 +19,7 @@ doc=Document();section=doc.sections[0];section.page_width=Inches(8.5);section.pa
 style=doc.styles['Normal'];style.font.name='Arial';style.font.size=Pt(10);style.paragraph_format.line_spacing=1.05;style.paragraph_format.space_after=Pt(3)
 for index,page in enumerate(source.split('\f')):
  if not page.strip():continue
- if index:doc.add_page_break()
+ # Let Word paginate naturally using the readable layout below.
  # The final signature block is recreated as a borderless table below.
  page=re.split(r'\n\s*_{10,}',page)[0] if index else page
  for block in re.split(r'\n\s*\n',page):
@@ -29,7 +29,7 @@ for index,page in enumerate(source.split('\f')):
   text=re.sub(r'\s+[12]$','',text)
   text=text.replace('DECLARACIONES I.','DECLARACIONES\nI.')
   # Keep declarations, lettered items and service lists on separate paragraphs.
-  parts=re.split(r'\n|(?=\b[abc]\)\s)|(?=\b(?:III|II|IV|VI|V|I)\.\s)|(?=\b[123]\.\s+(?:Precio|Vigencia|Honorarios))',text)
+  parts=re.split(r'\n|(?=\b[abcd]\)\s)|(?=\b(?:III|II|IV|VI|V|I)\.\s)|(?=\b[123]\.\s+(?:Precio|Vigencia|Honorarios))',text)
   for part in parts:
    part=part.strip()
    if not part:continue
@@ -43,6 +43,8 @@ for index,page in enumerate(source.split('\f')):
 table=doc.add_table(rows=1,cols=2);caption=OxmlElement('w:tblCaption');caption.set(qn('w:val'),'TerminavitSignatures');table._tbl.tblPr.append(caption)
 for cell,key,label in [(table.cell(0,0),'buyer','EL CLIENTE'),(table.cell(0,1),'seller','EL PROFESIONAL')]:
  p=cell.paragraphs[0];p.alignment=WD_ALIGN_PARAGRAPH.CENTER;p.add_run('____________________________\n“'+label+'”\nNombre: {'+key+'}')
+import runpy
+apply_layout=runpy.run_path('scripts/exclusiva-layout.py')['apply_layout'];apply_layout(doc)
 doc.save('web/templates/contrato-exclusiva.docx')
 fields=[]
 def f(key,label,group,type='text',default=''):fields.append(dict(key=key,label=label,group=group,type=type,default=default))

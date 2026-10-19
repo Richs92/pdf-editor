@@ -74,3 +74,10 @@ test('exclusiva dos propietarios: parte cliente conjunta, campos y anexos separa
  const values=validateContract(item,{buyer:'PRIMER PROPIETARIO',buyer2:'SEGUNDO PROPIETARIO',price:'1000000'});assert.equal(values.priceWords,'Un millón de pesos m.n.');assert.equal(values.buyer2,'SEGUNDO PROPIETARIO');
  const original=catalog.find(item=>item.id==='contrato-exclusiva');assert.ok(!original.fields.some(f=>f.key==='buyer2'));
 });
+
+test('exclusivas: cuerpo Arial 11, interlineado amplio, márgenes y encabezados separados',async()=>{
+ for(const id of ['contrato-exclusiva','contrato-exclusiva-dos']){
+  const zip=new PizZip(await readFile('web/templates/'+id+'.docx')),styles=zip.file('word/styles.xml').asText(),doc=zip.file('word/document.xml').asText();
+  const normal=styles.match(/<w:style\b[^>]*w:styleId="Normal"[\s\S]*?<\/w:style>/)[0];assert.match(normal,/w:ascii="Arial"/);assert.match(normal,/w:sz w:val="22"/);assert.match(normal,/w:line="312"/);assert.match(doc,/w:left="1152"/);assert.ok(doc.includes('PRESTACIÓN DE SERVICIOS INMOBILIARIOS'));assert.ok(doc.includes('w:keepNext'));
+ }
+});

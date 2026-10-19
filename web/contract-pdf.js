@@ -65,7 +65,7 @@ export async function generateContractPDF(bytes){
    const align=val(pProp('jc'))||'left';const spacing=pProp('spacing');
    const before=Number(val(spacing,'before')||0)/20,after=Number(val(spacing,'after')??120)/20;
    const indent=pProp('ind');const left=Number(val(indent,'left')||0)/20;
-   const item={text:runs,alignment:align==='both'?'justify':['left','right','center','justify'].includes(align)?align:'left',margin:[Math.min(left,100),before,0,after],...(val(spacing,'line')&&(!val(spacing,'lineRule')||val(spacing,'lineRule')==='auto')?{lineHeight:Number(val(spacing,'line'))/240}:{}),...style};
+   const item={text:runs,alignment:align==='both'?'justify':['left','right','center','justify'].includes(align)?align:'left',margin:[Math.min(left,100),before,0,after],...(enabled(pProp('keepNext'))?{headlineLevel:1}:{}),...(val(spacing,'line')&&(!val(spacing,'lineRule')||val(spacing,'lineRule')==='auto')?{lineHeight:Number(val(spacing,'line'))/240}:{}),...style};
    if(!inCell&&(pendingBreak||pageBreak||enabled(child(props,'pageBreakBefore')))){item.pageBreak='before';pendingBreak=false;}
    result.push(item);
   }else if(pageBreak&&!inCell)pendingBreak=true;
@@ -99,6 +99,17 @@ export async function generateContractPDF(bytes){
  const content=[];
  for(const node of body.children){if(node.namespaceURI!==W)continue;if(node.localName==='p')content.push(...paragraph(node));else if(node.localName==='tbl')content.push(table(node));}
  if(content[0]?.pageBreak)delete content[0].pageBreak;
+ // Keep short headings with the first following paragraph. Long user content
+ // remains breakable so it can never be clipped by an oversized fixed block.
+ for(let index=0;index<content.length;index++){
+  if(content[index].headlineLevel!==1)continue;
+  let end=index+1;while(content[end]?.headlineLevel===1&&!content[end].pageBreak)end++;
+  if(!content[end]?.text||content[end].pageBreak)continue;
+  const group=content.slice(index,end+1),length=group.reduce((n,item)=>n+(Array.isArray(item.text)?item.text.map(run=>run.text||'').join(''):String(item.text||'')).length,0);
+  if(length>1800)continue;
+  const pageBreak=group[0].pageBreak;delete group[0].pageBreak;content.splice(index,group.length,{stack:group,unbreakable:true,...(pageBreak?{pageBreak}:{})});
+ }
+
  const definition={pageSize:{width,height},pageMargins:margins,defaultStyle:{font:'ContractSerif',fontSize:11,...defaults},content,footer:(page,total)=>({text:'Página '+page+' de '+total,alignment:'center',font:'ContractSans',fontSize:9,margin:[0,12,0,0]}),info:{title:'Documento TERMINAVIT',creator:'Documento · TERMINAVIT'}};
  const fonts={ContractSerif:fontURLs('Serif'),ContractSans:fontURLs('Sans')};
  return new Promise((resolve,reject)=>{

@@ -1,6 +1,7 @@
 import {authorize,recordEvent} from './session.js';
 await authorize('contracts');
 import {commissionTerms} from './exclusiva-terms.js';
+import {contractPDFPreview} from './contract-pdf-preview.js';
 import {generateContractPDF} from './contract-pdf.js';
 import {cropINEPhoto} from './ine-crop.js';
 import {openPrintWindow,supportsDirectPrinting,shareForPrinting} from './print-document.js';
@@ -44,6 +45,7 @@ function setGroup(group){
 function selectDocument(item){
   saveDraft();current=item;markDirty();
   document.querySelectorAll('.template-choice').forEach(el=>{el.classList.toggle('selected',el.dataset.id===item.id);el.setAttribute('aria-pressed',el.dataset.id===item.id);});
+  $('#preview-description').textContent=item.group==='Exclusiva'?'Vista del PDF que descargarás e imprimirás, con la misma tipografía, separación y paginación. Desliza dentro de la vista previa para recorrer las páginas.':'Revisa los datos y los anexos antes de descargar. Vista orientativa del Word. El PDF conserva el contenido y los anexos, con paginación propia. Desliza dentro de la vista previa para recorrer las páginas.';
   $('#document-group').textContent=item.group;$('#document-title').textContent=item.title;
   const fields=$('#fields');fields.replaceChildren();const groups=new Map();
   for(const field of item.fields){
@@ -172,9 +174,10 @@ async function prepareDocument({manual=false}={}){
   if(!isCurrent())return;
   const bytes=await generateWord(template,item,data,photos,signatureData.get(item.id)||{});
   if(!isCurrent())return;
-  await renderDocument(bytes,isCurrent);
+  let previewPDF;
+  if(item.group==='Exclusiva'){previewPDF=await generateContractPDF(bytes);if(!isCurrent())return;await contractPDFPreview(previewPDF,$('#document-preview'),isCurrent);fitPreview();}else await renderDocument(bytes,isCurrent);
   if(!isCurrent())return;
-  const ready={bytes,id:item.id,version,logged:null};generated=ready;pdfCache=null;
+  const ready={bytes,id:item.id,version,logged:null};generated=ready;pdfCache=previewPDF?{ready,promise:Promise.resolve(previewPDF)}:null;
   if(manual)await logGeneration(ready);
   if(!isCurrent())return;
   $('#exports').hidden=false;$('#preview-state').textContent='Vista previa actualizada';
