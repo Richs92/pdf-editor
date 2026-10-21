@@ -2129,5 +2129,251 @@
         "default": ""
       }
     ]
+  },
+  {
+    "id": "propuesta-compra",
+    "title": "Propuesta de intención de compra",
+    "group": "Intención de compra",
+    "template": "templates/propuesta-compra.docx",
+    "fields": [
+      {
+        "key": "issueCity",
+        "label": "Ciudad y estado de la propuesta",
+        "group": "Fecha de propuesta",
+        "type": "text",
+        "default": "Culiacán, Sinaloa"
+      },
+      {
+        "key": "issueDate",
+        "label": "Fecha de propuesta (día, mes y año)",
+        "group": "Fecha de propuesta",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "propertyType",
+        "label": "Tipo de inmueble",
+        "group": "Inmueble",
+        "type": "text",
+        "default": "Casa habitación"
+      },
+      {
+        "key": "propertyAddress",
+        "label": "Calle y número",
+        "group": "Inmueble",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "propertyColony",
+        "label": "Colonia",
+        "group": "Inmueble",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "propertyCP",
+        "label": "Código postal",
+        "group": "Inmueble",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "propertyCity",
+        "label": "Ciudad y estado",
+        "group": "Inmueble",
+        "type": "text",
+        "default": "Culiacán, Sinaloa"
+      },
+      {
+        "key": "buyer",
+        "label": "Nombre completo del comprador / oferente",
+        "group": "Comprador / oferente",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "buyerAddress",
+        "label": "Calle y número del comprador",
+        "group": "Comprador / oferente",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "buyerColony",
+        "label": "Colonia del comprador",
+        "group": "Comprador / oferente",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "buyerCP",
+        "label": "CP del comprador",
+        "group": "Comprador / oferente",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "buyerPhone",
+        "label": "Teléfono del comprador",
+        "group": "Comprador / oferente",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "seller",
+        "label": "Nombre completo del propietario",
+        "group": "Propietario",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "sellerAddress",
+        "label": "Calle y número del propietario",
+        "group": "Propietario",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "sellerColony",
+        "label": "Colonia del propietario",
+        "group": "Propietario",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "sellerCP",
+        "label": "CP del propietario",
+        "group": "Propietario",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "sellerCity",
+        "label": "Ciudad y estado del propietario",
+        "group": "Propietario",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "price",
+        "label": "Precio propuesto ($)",
+        "group": "Oferta y pagos",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "priceWords",
+        "label": "Precio propuesto en letra (automático)",
+        "group": "Oferta y pagos",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "deposit",
+        "label": "Anticipo a la firma del contrato ($)",
+        "group": "Oferta y pagos",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "depositWords",
+        "label": "Anticipo a la firma del contrato en letra (automático)",
+        "group": "Oferta y pagos",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "balance",
+        "label": "Saldo pendiente (automático) ($)",
+        "group": "Oferta y pagos",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "balanceWords",
+        "label": "Saldo pendiente (automático) en letra (automático)",
+        "group": "Oferta y pagos",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "earnest",
+        "label": "Garantía de seriedad de la oferta ($)",
+        "group": "Oferta y pagos",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "earnestWords",
+        "label": "Garantía de seriedad de la oferta en letra (automático)",
+        "group": "Oferta y pagos",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "deadline",
+        "label": "Fecha límite para firmar el contrato",
+        "group": "Plazos y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "validityDays",
+        "label": "Vigencia de la propuesta (días naturales)",
+        "group": "Plazos y notaría",
+        "type": "number",
+        "default": "3"
+      },
+      {
+        "key": "notaryNumber",
+        "label": "Número de notaría",
+        "group": "Plazos y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "notaryName",
+        "label": "Nombre completo del notario",
+        "group": "Plazos y notaría",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "agent",
+        "label": "Nombre del asesor / mediador",
+        "group": "Recibo del mediador",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "receiptPayer",
+        "label": "Persona que entrega el dinero al mediador",
+        "group": "Recibo del mediador",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "receiptAmount",
+        "label": "Importe recibido por el mediador ($)",
+        "group": "Recibo del mediador",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "receiptAmountWords",
+        "label": "Importe recibido en letra (automático)",
+        "group": "Recibo del mediador",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "notification",
+        "label": "Notificación del propietario recibida por el oferente",
+        "group": "Recepción de aceptación",
+        "type": "text",
+        "default": "la aceptación"
+      }
+    ]
   }
 ]

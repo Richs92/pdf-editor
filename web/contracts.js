@@ -1,5 +1,6 @@
 import {authorize,recordEvent} from './session.js';
 await authorize('contracts');
+import {purchaseOfferAmounts} from './purchase-offer.js';
 import {archivePDF} from './document-archive.js';
 import {commissionTerms} from './exclusiva-terms.js';
 import {contractPDFPreview} from './contract-pdf-preview.js';
@@ -37,7 +38,7 @@ function setGroup(group){
   for(const item of catalog.filter(item=>item.group===group)){
     const button=document.createElement('button');button.className='template-choice';button.dataset.id=item.id;
     const title=document.createElement('strong');title.textContent=item.title;
-    const subtitle=document.createElement('small');subtitle.textContent=item.group==='Exclusiva'?'Servicios inmobiliarios · Word y PDF':item.group==='Recibo de apartado'?'Recibo · Word y PDF':item.group==='Pagaré'?'Título de crédito · Word y PDF':'Promesa de compraventa · '+item.group;
+    const subtitle=document.createElement('small');subtitle.textContent=item.id==='propuesta-compra'?'Oferta, resolución y recibo · Word y PDF':item.group==='Exclusiva'?'Servicios inmobiliarios · Word y PDF':item.group==='Recibo de apartado'?'Recibo · Word y PDF':item.group==='Pagaré'?'Título de crédito · Word y PDF':'Promesa de compraventa · '+item.group;
     button.append(title,subtitle);button.addEventListener('click',()=>selectDocument(item));cards.append(button);
   }
   const preferred=catalog.find(item=>item.group===group && item.id===current?.id)||catalog.find(item=>item.group===group);
@@ -46,7 +47,7 @@ function setGroup(group){
 function selectDocument(item){
   saveDraft();current=item;markDirty();
   document.querySelectorAll('.template-choice').forEach(el=>{el.classList.toggle('selected',el.dataset.id===item.id);el.setAttribute('aria-pressed',el.dataset.id===item.id);});
-  $('#preview-description').textContent=item.group==='Exclusiva'?'Vista del PDF que descargarás e imprimirás, con la misma tipografía, separación y paginación. Desliza dentro de la vista previa para recorrer las páginas.':'Revisa los datos y los anexos antes de descargar. Vista orientativa del Word. El PDF conserva el contenido y los anexos, con paginación propia. Desliza dentro de la vista previa para recorrer las páginas.';
+  $('#preview-description').textContent=(item.group==='Exclusiva'||item.id==='propuesta-compra')?'Vista del PDF que descargarás e imprimirás, con la misma tipografía, separación y paginación. Desliza dentro de la vista previa para recorrer las páginas.':'Revisa los datos y los anexos antes de descargar. Vista orientativa del Word. El PDF conserva el contenido y los anexos, con paginación propia. Desliza dentro de la vista previa para recorrer las páginas.';
   $('#document-group').textContent=item.group;$('#document-title').textContent=item.title;
   const fields=$('#fields');fields.replaceChildren();const groups=new Map();
   for(const field of item.fields){
@@ -57,6 +58,7 @@ function selectDocument(item){
     if(moneyPairs(item.id).some(([,words])=>field.key===words)){input.readOnly=true;input.placeholder='Se calcula automáticamente con el importe';}
     if(field.key==='commission'&&item.group==='Exclusiva')input.inputMode='decimal';
     if(field.key==='commissionWords'&&item.group==='Exclusiva'){input.readOnly=true;input.placeholder='Se calcula automáticamente con la comisión';}
+    if(item.id==='propuesta-compra'&&field.key==='balance'){input.readOnly=true;input.placeholder='Se calcula con precio y anticipo';}
     if(field.type==='number'){input.type='number';input.min='0';input.step='1';input.inputMode='numeric';}
     if(field.key==='durationDays')input.min='1';
     input.value=drafts.get(item.id)?.[field.key]??field.default;wrapper.append(label,input);if(['sellerId','buyerId','buyer2Id'].includes(field.key)){const hint=document.createElement('p');hint.className='hint';hint.textContent='Tipo INE y número del reverso (CIC u OCR). Escribe el número tal como aparece en la credencial.';wrapper.append(hint);}groups.get(field.group).append(wrapper);
@@ -74,7 +76,7 @@ function buildSignaturePads(){
 }
 function photoSlots(){
  const note=current.id==='pagare',receipt=current.id==='recibo-apartado';
- const people=current.id==='contrato-exclusiva-dos'?[['buyer','Propietario 1'],['buyer2','Propietario 2'],['seller','Profesional']]:current.id==='contrato-exclusiva'?[['buyer','Cliente'],['seller','Profesional']]:receipt?[['buyer','Comprador'],['seller','Asesor/vendedor']]:[['seller',note?'Suscriptor':'Vendedor'],['buyer',note?'Beneficiario':'Comprador']];
+ const people=current.id==='propuesta-compra'?[['buyer','Comprador / oferente'],['seller','Propietario'],['agent','Asesor / mediador']]:current.id==='contrato-exclusiva-dos'?[['buyer','Propietario 1'],['buyer2','Propietario 2'],['seller','Profesional']]:current.id==='contrato-exclusiva'?[['buyer','Cliente'],['seller','Profesional']]:receipt?[['buyer','Comprador'],['seller','Asesor/vendedor']]:[['seller',note?'Suscriptor':'Vendedor'],['buyer',note?'Beneficiario':'Comprador']];
  return people.flatMap(([person,label])=>[{key:person+'-front',label:label+' · Frente de INE'},{key:person+'-back',label:label+' · Reverso de INE'}]);
 }
 function photoKey(key){return current.id+'-'+key;}
@@ -138,8 +140,19 @@ async function renderDocument(bytes,isCurrent){
  source.querySelectorAll('style').forEach(style=>preview.append(style.cloneNode(true)));
  source.querySelectorAll('section.docx').forEach(section=>{const holder=document.createElement('div');holder.className='word-sheet';holder.append(section.cloneNode(true));preview.append(holder);});fitPreview();preview.scrollTop=scrollTop;
 }
-function moneyPairs(id){return id==='pagare'?[['amount','amountWords']]:['contrato-exclusiva','contrato-exclusiva-dos'].includes(id)?[['price','priceWords']]:id==='recibo-apartado'?['deposit','price','penalty'].map(key=>[key,key+'Words']):[];}
+function moneyPairs(id){return id==='propuesta-compra'?['price','deposit','balance','earnest','receiptAmount'].map(key=>[key,key+'Words']):id==='pagare'?[['amount','amountWords']]:['contrato-exclusiva','contrato-exclusiva-dos'].includes(id)?[['price','priceWords']]:id==='recibo-apartado'?['deposit','price','penalty'].map(key=>[key,key+'Words']):[];}
 function syncMoneyAmounts(){
+ if(current?.id==='propuesta-compra'){
+  let invalid=false;
+  for(const key of ['price','deposit','earnest','receiptAmount']){
+   const input=form.elements[key],start=input.selectionStart,raw=input.value;
+   try{const formatted=formatPagareInput(raw),significant=start===null?null:raw.slice(0,start).replace(/,/g,'').length;input.value=formatted;input.setCustomValidity('');if(significant!==null){let position=0,count=0;while(position<formatted.length&&count<significant){if(formatted[position]!==',')count++;position++;}input.setSelectionRange(position,position);}}
+   catch(error){invalid=true;input.setCustomValidity(error.message);form.elements[key+'Words'].value='';}
+  }
+  form.elements.balance.value='';form.elements.balanceWords.value='';if(invalid)return;
+  try{const amounts=purchaseOfferAmounts(getValues());for(const [key,value]of Object.entries(amounts))if(key==='balance'||key.endsWith('Words'))form.elements[key].value=value;}
+  catch(error){form.elements.deposit.setCustomValidity(error.message);}return;
+ }
  for(const [amount,wordKey]of moneyPairs(current?.id)){
  const input=form.elements[amount],words=form.elements[wordKey],raw=input.value,start=input.selectionStart;
  try{
@@ -176,7 +189,7 @@ async function prepareDocument({manual=false}={}){
   const bytes=await generateWord(template,item,data,photos,signatureData.get(item.id)||{});
   if(!isCurrent())return;
   let previewPDF;
-  if(item.group==='Exclusiva'){previewPDF=await generateContractPDF(bytes);if(!isCurrent())return;await contractPDFPreview(previewPDF,$('#document-preview'),isCurrent);fitPreview();}else await renderDocument(bytes,isCurrent);
+  if(item.group==='Exclusiva'||item.id==='propuesta-compra'){previewPDF=await generateContractPDF(bytes);if(!isCurrent())return;await contractPDFPreview(previewPDF,$('#document-preview'),isCurrent);fitPreview();}else await renderDocument(bytes,isCurrent);
   if(!isCurrent())return;
   const ready={bytes,id:item.id,version,logged:null};generated=ready;pdfCache=previewPDF?{ready,promise:Promise.resolve(previewPDF)}:null;
   if(manual)await logGeneration(ready);

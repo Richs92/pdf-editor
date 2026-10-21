@@ -4,8 +4,8 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {validateContract,groupINEPhotos} from '../web/word-generator.js';
 const catalog=JSON.parse(await readFile(new URL('../web/contracts-catalog.json',import.meta.url),'utf8'));
-test('las diez plantillas permiten dejar todos los datos pendientes como líneas imprimibles',()=>{
- assert.equal(catalog.length,10);
+test('las once plantillas permiten dejar todos los datos pendientes como líneas imprimibles',()=>{
+ assert.equal(catalog.length,11);
  for(const item of catalog){
   const values=validateContract(item,{});
   assert.deepEqual(Object.keys(values),item.fields.map(field=>field.key));

@@ -119,3 +119,5 @@ import runpy
 runpy.run_path("scripts/prepare-apartado.py", run_name="__main__")
 
 runpy.run_path("scripts/prepare-exclusiva.py", run_name="__main__")
+
+runpy.run_path("scripts/prepare-propuesta.py", run_name="__main__")

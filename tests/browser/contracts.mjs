@@ -25,6 +25,15 @@ const sample={seller:'ANA PÉREZ GARCÍA',buyer:'LUIS LÓPEZ RUIZ',sellerId:'INE
   if(item.group==='Exclusiva'){
    await page.locator('#field-commission').evaluate(el=>el.closest('details').open=true);await page.locator('#field-commission').fill('6.5');await page.locator('#field-durationDays').fill('120');assert.equal(await page.locator('#field-commissionWords').inputValue(),'Seis punto cinco por ciento');
   }
+  if(item.id==='propuesta-compra'){
+   await page.locator('#field-price').evaluate(el=>el.closest('details').open=true);
+   await page.locator('#field-price').fill('1400000.10');await page.locator('#field-deposit').fill('20000.05');
+   assert.equal(await page.locator('#field-price').inputValue(),'1,400,000.10');
+   assert.equal(await page.locator('#field-balance').inputValue(),'1,380,000.05');
+   assert.equal(await page.locator('#field-balance').evaluate(el=>el.readOnly),true);
+   await page.locator('#field-deposit').fill('1500000');assert.equal(await page.locator('#contract-form').evaluate(form=>form.checkValidity()),false);
+   await page.locator('#field-deposit').fill('20000.05');assert.equal(await page.locator('#contract-form').evaluate(form=>form.checkValidity()),true);
+  }
   if(item.id==='recibo-apartado'){
    await page.locator('#field-deposit').evaluate(el=>el.closest('details').open=true);
    await page.locator('#field-deposit').fill('10000');
