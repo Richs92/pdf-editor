@@ -22,6 +22,14 @@ const sample={seller:'ANA PÉREZ GARCÍA',buyer:'LUIS LÓPEZ RUIZ',sellerId:'INE
   await page.locator(`.template-choice[data-id="${item.id}"]`).click();
   assert.equal(await page.locator('#fields [name]').count(),item.fields.length);
   await page.evaluate(sample=>{for(const el of document.querySelectorAll('#fields input,#fields textarea'))el.value=sample[el.name]||'15';document.querySelector('#contract-form').dispatchEvent(new Event('input',{bubbles:true}));},sample);
+  if(item.id.includes('ratificado')){
+   await page.locator('#field-price').evaluate(el=>el.closest('details').open=true);
+   await page.locator('#field-price').fill('10000.50');
+   assert.equal(await page.locator('#field-price').inputValue(),'10,000.50');
+   assert.equal(await page.locator('#field-priceWords').inputValue(),'Diez mil pesos 50/100 m.n.');
+   assert.equal(await page.locator('#field-priceWords').evaluate(el=>el.readOnly),true);
+   assert.equal(await page.locator('#field-balanceWords').count(),0);
+  }
   if(item.group==='Exclusiva'){
    await page.locator('#field-commission').evaluate(el=>el.closest('details').open=true);await page.locator('#field-commission').fill('6.5');await page.locator('#field-durationDays').fill('120');assert.equal(await page.locator('#field-commissionWords').inputValue(),'Seis punto cinco por ciento');
   }

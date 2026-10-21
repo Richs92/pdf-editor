@@ -81,3 +81,17 @@ test('exclusivas: cuerpo Arial 11, interlineado amplio, márgenes y encabezados 
   const normal=styles.match(/<w:style\b[^>]*w:styleId="Normal"[\s\S]*?<\/w:style>/)[0];assert.match(normal,/w:ascii="Arial"/);assert.match(normal,/w:sz w:val="22"/);assert.match(normal,/w:line="312"/);assert.match(doc,/w:left="1152"/);assert.ok(doc.includes('PRESTACIÓN DE SERVICIOS INMOBILIARIOS'));assert.ok(doc.includes('w:keepNext'));
  }
 });
+
+test('todos los contratos derivan los montos en letra solo en los campos previstos por la plantilla',()=>{
+ for(const item of catalog){
+  const data=Object.fromEntries(item.fields.map(field=>[field.key,'']));
+  for(const key of ['amount','price','deposit','penalty','earnest','receiptAmount'])if(key in data)data[key]='10000.50';
+  for(const key of Object.keys(data))if(key.endsWith('Words'))data[key]='texto anterior';
+  const values=validateContract(item,data);
+  for(const key of ['amount','price','deposit','penalty','earnest','receiptAmount'])if(key+'Words' in data){assert.equal(values[key],'10,000.50',item.id);assert.equal(values[key+'Words'],'Diez mil pesos 50/100 m.n.',item.id);}
+  if(item.id.includes('ratificado')){assert.ok(!('balanceWords' in values));assert.match(values.balance,/^_+$/);}
+  for(const key of ['amount','price','deposit','penalty','earnest','receiptAmount'])if(key in data)data[key]='';
+  const blank=validateContract(item,data);
+  for(const key of ['amount','price','deposit','penalty','earnest','receiptAmount'])if(key+'Words' in data)assert.match(blank[key+'Words'],/^_+$/,item.id);
+ }
+});

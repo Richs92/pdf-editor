@@ -28,3 +28,9 @@ export function pagareAmount(raw){
  const words=apocopate(integerWords(whole))+(whole>=1000000&&whole%1000000===0?' de':'')+(whole===1?' peso':' pesos')+(cents!=='00'?' '+cents+'/100':'')+' m.n.';
  return {amount,amountWords:words[0].toUpperCase()+words.slice(1)};
 }
+
+// Derive words only where the template defines both monetary fields.
+export function contractMoneyPairs(contract){
+ const keys=new Set((contract?.fields||[]).map(field=>field.key));
+ return ['amount','price','deposit','penalty','balance','earnest','receiptAmount'].filter(key=>keys.has(key)&&keys.has(key+'Words')).map(key=>[key,key+'Words']);
+}

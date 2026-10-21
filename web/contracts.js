@@ -9,7 +9,7 @@ import {cropINEPhoto} from './ine-crop.js';
 import {openPrintWindow,supportsDirectPrinting,shareForPrinting} from './print-document.js';
 import {signaturePad} from './signature-pad.js';
 import {autoCropINE} from './ine-detect.js';
-import {formatPagareInput,pagareAmount} from './pagare-amount.js';
+import {formatPagareInput,pagareAmount,contractMoneyPairs} from './pagare-amount.js';
 import {supportsPDFSharing,sharePDF} from './share-document.js';
 import {generateWord} from './word-generator.js';
 const $=selector=>document.querySelector(selector);
@@ -140,7 +140,7 @@ async function renderDocument(bytes,isCurrent){
  source.querySelectorAll('style').forEach(style=>preview.append(style.cloneNode(true)));
  source.querySelectorAll('section.docx').forEach(section=>{const holder=document.createElement('div');holder.className='word-sheet';holder.append(section.cloneNode(true));preview.append(holder);});fitPreview();preview.scrollTop=scrollTop;
 }
-function moneyPairs(id){return id==='propuesta-compra'?['price','deposit','balance','earnest','receiptAmount'].map(key=>[key,key+'Words']):id==='pagare'?[['amount','amountWords']]:['contrato-exclusiva','contrato-exclusiva-dos'].includes(id)?[['price','priceWords']]:id==='recibo-apartado'?['deposit','price','penalty'].map(key=>[key,key+'Words']):[];}
+function moneyPairs(id){return contractMoneyPairs(catalog.find(item=>item.id===id));}
 function syncMoneyAmounts(){
  if(current?.id==='propuesta-compra'){
   let invalid=false;
@@ -205,7 +205,7 @@ async function prepareDocument({manual=false}={}){
   if(queuedManual){queuedManual=false;schedulePreview(0,true);}else if(!isCurrent())schedulePreview();
  }
 }
-form.addEventListener('submit',event=>{event.preventDefault();if(current?.id==='pagare')syncMoneyAmounts();saveDraft();markDirty(true);void prepareDocument({manual:true});});
+form.addEventListener('submit',event=>{event.preventDefault();syncMoneyAmounts();saveDraft();markDirty(true);void prepareDocument({manual:true});});
 
 function pdfForReady(ready){
  if(pdfCache?.ready===ready)return pdfCache.promise;

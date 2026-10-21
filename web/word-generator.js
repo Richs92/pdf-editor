@@ -1,12 +1,12 @@
 import {purchaseOfferAmounts} from './purchase-offer.js';
 import {commissionTerms} from './exclusiva-terms.js';
-import {pagareAmount} from './pagare-amount.js';
+import {pagareAmount,contractMoneyPairs} from './pagare-amount.js';
 const W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
 const R = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
 const escapeXML = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
 export function validateContract(contract, data) {
-  if(contract.id==='pagare')data={...data,...pagareAmount(data.amount)};
-  if(['recibo-apartado','contrato-exclusiva','contrato-exclusiva-dos'].includes(contract.id)){data={...data};for(const key of (contract.id.startsWith('contrato-exclusiva')?['price']:['deposit','price','penalty'])){const value=pagareAmount(data[key]);data[key]=value.amount;data[key+'Words']=value.amountWords;}}
+  data={...data};
+  for(const [key,words] of contractMoneyPairs(contract)){const value=pagareAmount(data[key]);data[key]=value.amount;data[words]=value.amountWords;}
   if(contract.id?.startsWith('contrato-exclusiva'))data={...data,...commissionTerms(data.commission)};
   if(contract.id==='propuesta-compra')data={...data,...purchaseOfferAmounts(data)};
   const values = {};
