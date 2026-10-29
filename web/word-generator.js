@@ -1,3 +1,4 @@
+import {powerLetterPeople} from './power-letters.js';
 import {purchaseOfferAmounts} from './purchase-offer.js';
 import {commissionTerms} from './exclusiva-terms.js';
 import {pagareAmount,contractMoneyPairs} from './pagare-amount.js';
@@ -73,10 +74,10 @@ function photoXML(id, relationship, width, height) {
   return `<w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:drawing><wp:inline xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${id}" name="INE ${id}"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${id}" name="INE ${id}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip xmlns:r="${R}" r:embed="${relationship}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>`;
 }
 export function groupINEPhotos(photos,documentId){
-  return (documentId==='propuesta-compra'?['buyer','seller','agent']:documentId==='contrato-exclusiva-dos'?['buyer','buyer2','seller']:['recibo-apartado','contrato-exclusiva'].includes(documentId)?['buyer','seller']:['seller','buyer']).flatMap(person=>{
+  return (powerLetterPeople(documentId)?.map(([person])=>person)||(documentId==='propuesta-compra'?['buyer','seller','agent']:documentId==='contrato-exclusiva-dos'?['buyer','buyer2','seller']:['recibo-apartado','contrato-exclusiva'].includes(documentId)?['buyer','seller']:['seller','buyer'])).flatMap(person=>{
     const selected=photos.filter(photo=>(photo.person||(/^(Vendedor|Suscriptor|Asesor|Profesional)/.test(photo.label)?'seller':'buyer'))===person)
       .sort((a,b)=>(a.face||(/Frente/.test(a.label)?'front':'back'))==='front'?-1:1);
-    const title=documentId==='propuesta-compra'?({buyer:'Comprador / oferente',seller:'Propietario',agent:'Asesor / mediador'}[person]):documentId==='contrato-exclusiva-dos'?({buyer:'Propietario 1',buyer2:'Propietario 2',seller:'Profesional'}[person]):documentId==='contrato-exclusiva'?(person==='buyer'?'Cliente':'Profesional'):documentId==='pagare'?(person==='seller'?'Suscriptor':'Beneficiario'):(person==='seller'?(documentId==='recibo-apartado'?'Asesor/vendedor':'Vendedor'):'Comprador');
+    const title=powerLetterPeople(documentId)?.find(([key])=>key===person)?.[1]||(documentId==='propuesta-compra'?({buyer:'Comprador / oferente',seller:'Propietario',agent:'Asesor / mediador'}[person]):documentId==='contrato-exclusiva-dos'?({buyer:'Propietario 1',buyer2:'Propietario 2',seller:'Profesional'}[person]):documentId==='contrato-exclusiva'?(person==='buyer'?'Cliente':'Profesional'):documentId==='pagare'?(person==='seller'?'Suscriptor':'Beneficiario'):(person==='seller'?(documentId==='recibo-apartado'?'Asesor/vendedor':'Vendedor'):'Comprador'));
     return selected.length?[{person,title,photos:selected}]:[];
   });
 }

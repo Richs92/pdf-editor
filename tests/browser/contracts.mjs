@@ -22,6 +22,14 @@ const sample={seller:'ANA PÉREZ GARCÍA',buyer:'LUIS LÓPEZ RUIZ',sellerId:'INE
   await page.locator(`.template-choice[data-id="${item.id}"]`).click();
   assert.equal(await page.locator('#fields [name]').count(),item.fields.length);
   await page.evaluate(sample=>{for(const el of document.querySelectorAll('#fields input,#fields textarea'))el.value=sample[el.name]||'15';document.querySelector('#contract-form').dispatchEvent(new Event('input',{bubbles:true}));},sample);
+  if(item.group==='Cartas poder'){
+   const people=item.id==='carta-poder-cfe'?['Otorgante','Autorizado','Testigo 1','Testigo 2']:['Otorgante','Autorizado'];
+   assert.equal(await page.locator('#photos .photo-card').count(),people.length*2);
+   for(const person of people)for(const face of ['Frente','Reverso']){
+    await page.getByLabel('Subir imagen: '+person+' · '+face+' de INE',{exact:true}).setInputFiles({name:'prueba.jpg',mimeType:'image/jpeg',buffer:Buffer.from(image,'base64')});
+    await page.locator('#form-status').filter({hasText:'INE añadida.'}).waitFor();
+   }
+  }
   if(item.id.includes('ratificado')){
    await page.locator('#field-price').evaluate(el=>el.closest('details').open=true);
    await page.locator('#field-price').fill('10000.50');
@@ -77,6 +85,12 @@ const sample={seller:'ANA PÉREZ GARCÍA',buyer:'LUIS LÓPEZ RUIZ',sellerId:'INE
   const documentXML=word.file('word/document.xml').asText();assert.ok(documentXML.includes('rIdTerminavitPageFooter'));
   if(index===0||index===1){const xml=await page.evaluate(text=>{const doc=new DOMParser().parseFromString(text,'application/xml'),ns='http://schemas.openxmlformats.org/wordprocessingml/2006/main';return [...doc.getElementsByTagNameNS(ns,'drawing')].every(drawing=>drawing.parentElement.parentElement.querySelector('jc')?.getAttributeNS(ns,'val')==='center');},documentXML);assert.equal(xml,true);}
   download=page.waitForEvent('download',{timeout:90000});await page.locator('#pdf-download').click();await(await download).saveAs('artifacts/contracts/'+item.id+'.pdf');
+  if(item.group==='Cartas poder'){
+   const pdfBytes=await readFile('artifacts/contracts/'+item.id+'.pdf');
+   const count=await page.evaluate(async bytes=>{const lib=await import('/vendor/pdf.mjs');lib.GlobalWorkerOptions.workerSrc='/vendor/pdf.worker.mjs';const pdf=await lib.getDocument({data:new Uint8Array(bytes)}).promise;try{return pdf.numPages;}finally{await pdf.destroy();}},[...pdfBytes]);
+   assert.equal(count,item.id==='carta-poder-cfe'?5:3);
+   assert.equal(await page.locator('#document-preview canvas').count(),count);
+  }
   if(item.group==='Exclusiva'){
    const pdfBytes=await readFile('artifacts/contracts/'+item.id+'.pdf');
    const pages=await page.evaluate(async bytes=>{const lib=await import('/vendor/pdf.mjs');lib.GlobalWorkerOptions.workerSrc='/vendor/pdf.worker.mjs';const pdf=await lib.getDocument({data:new Uint8Array(bytes)}).promise;try{return pdf.numPages;}finally{await pdf.destroy();}},[...pdfBytes]);assert.equal(await page.locator('#document-preview canvas').count(),pages);assert.ok(pages>=3);

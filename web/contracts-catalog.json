@@ -2375,5 +2375,175 @@
         "default": "la aceptación"
       }
     ]
+  },
+  {
+    "id": "carta-poder-cfe",
+    "title": "Carta poder CFE",
+    "group": "Cartas poder",
+    "template": "templates/carta-poder-cfe.docx",
+    "fields": [
+      {
+        "key": "signCity",
+        "label": "Ciudad y estado",
+        "group": "Fecha y lugar",
+        "type": "text",
+        "default": "Culiacán, Sinaloa"
+      },
+      {
+        "key": "signDay",
+        "label": "Día",
+        "group": "Fecha y lugar",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "signMonth",
+        "label": "Mes",
+        "group": "Fecha y lugar",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "signYear",
+        "label": "Año",
+        "group": "Fecha y lugar",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "seller",
+        "label": "Nombre completo del otorgante",
+        "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "sellerId",
+        "label": "Número de identificación del otorgante",
+        "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "buyer",
+        "label": "Nombre completo del autorizado",
+        "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "buyerId",
+        "label": "Número de identificación del autorizado",
+        "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "witness1",
+        "label": "Nombre completo del testigo 1",
+        "group": "Testigos",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "witness2",
+        "label": "Nombre completo del testigo 2",
+        "group": "Testigos",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "procedure",
+        "label": "Trámite que se autoriza",
+        "group": "Trámite",
+        "type": "text",
+        "default": "cambio de nombre de mi contrato de luz"
+      }
+    ]
+  },
+  {
+    "id": "carta-poder-japac",
+    "title": "Carta poder JAPAC",
+    "group": "Cartas poder",
+    "template": "templates/carta-poder-japac.docx",
+    "fields": [
+      {
+        "key": "signCity",
+        "label": "Ciudad y estado",
+        "group": "Fecha y lugar",
+        "type": "text",
+        "default": "Culiacán, Sinaloa"
+      },
+      {
+        "key": "signDay",
+        "label": "Día",
+        "group": "Fecha y lugar",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "signMonth",
+        "label": "Mes",
+        "group": "Fecha y lugar",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "signYear",
+        "label": "Año",
+        "group": "Fecha y lugar",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "seller",
+        "label": "Nombre completo del otorgante",
+        "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "sellerId",
+        "label": "Número de identificación del otorgante (IDMEX)",
+        "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "buyer",
+        "label": "Nombre completo del autorizado",
+        "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "buyerId",
+        "label": "Número de identificación del autorizado (IDMEX)",
+        "group": "Personas",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "propertyAddress",
+        "label": "Domicilio completo del inmueble",
+        "group": "Inmueble y servicio",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "account",
+        "label": "Número de cuenta JAPAC",
+        "group": "Inmueble y servicio",
+        "type": "text",
+        "default": ""
+      },
+      {
+        "key": "procedure",
+        "label": "Trámite que se autoriza",
+        "group": "Trámite",
+        "type": "text",
+        "default": "solicitar la CARTA DE NO ADEUDO"
+      }
+    ]
   }
 ]
